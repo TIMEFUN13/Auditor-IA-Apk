@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Partículas C175">
+<script>/* Dentro de la APK (Capacitor): cargar el núcleo para usar los complementos nativos */
+if (window.Capacitor || (location.protocol === 'https:' && location.hostname === 'localhost' && !location.port)) document.write('<script src="capacitor.js"><\/script>');</script>
 <title>Identificador de partículas · Parches C175</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23FFCD11'/%3E%3Ccircle cx='32' cy='32' r='19' fill='none' stroke='%2313171C' stroke-width='4'/%3E%3Cpath d='M32 9v8M32 47v8M9 32h8M47 32h8' stroke='%2313171C' stroke-width='4'/%3E%3Crect x='26' y='26' width='12' height='12' rx='2' fill='none' stroke='%23D7261E' stroke-width='3.5'/%3E%3C/svg%3E">
 <!--
@@ -1627,7 +1629,8 @@ const U = {
   },
   async nativeSave(name, blob) {
     try {
-      const P = window.Capacitor.Plugins;
+      const P = { Filesystem: Env.plugin('Filesystem'), Share: Env.plugin('Share') };
+      if (!P.Filesystem || !P.Share) throw new Error('complementos nativos no disponibles');
       const b64 = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1]); fr.onerror = () => rej(fr.error); fr.readAsDataURL(blob); });
       const w = await P.Filesystem.writeFile({ path: name, data: b64, directory: 'CACHE' });
       await P.Share.share({ title: name, url: w.uri, dialogTitle: 'Guardar o enviar ' + name });
@@ -1671,12 +1674,22 @@ const Env = {
   standalone: matchMedia('(display-mode: standalone)').matches || navigator.standalone === true,
   canCamera: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.isSecureContext,
   canScreen: !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) && window.isSecureContext,
+  // complemento nativo de Capacitor (solo dentro de la APK)
+  _plugins: {},
+  plugin(name) {
+    const C = window.Capacitor; if (!C) return null;
+    if (!this._plugins[name]) this._plugins[name] = C.registerPlugin ? C.registerPlugin(name) : (C.Plugins || {})[name];
+    return this._plugins[name] || null;
+  },
   ios: /iP(hone|ad|od)/.test(navigator.platform) || (navigator.userAgent.includes('Mac') && 'ontouchend' in document),
   android: /Android/i.test(navigator.userAgent),
   policyAllows(f) { const pp = document.permissionsPolicy || document.featurePolicy; try { return !(pp && pp.allowsFeature) || pp.allowsFeature(f); } catch (e) { return true; } },
 };
 
 /* ---------------- almacenamiento ---------------- */
+// En la APK la captura de pantalla es nativa (MediaProjection de Android)
+if (Env.native && Env.plugin('ScreenCapture')) Env.canScreen = true;
+
 const Store = {
   get(k, d) { try { const v = localStorage.getItem('pv2.' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem('pv2.' + k, JSON.stringify(v)); return true; } catch (e) { return false; } },
@@ -2354,7 +2367,7 @@ const Live = (() => {
   const proc = document.createElement('canvas'), pctx = proc.getContext('2d', { willReadFrequently: true });
   const frozenCv = document.createElement('canvas');
   const tracker = new Tracker(), sweep = new Sweep();
-  const src = { stream: null, video: null, url: null, name: '' };
+  const src = { stream: null, video: null, url: null, name: '', native: null, nativeSub: null };
   const tool = { kind: '', frozen: false, pts: [], cursor: null, measures: [] };
   let mode = 'cam', raf = 0, active = false, lastT = 0, fps = 0, procMs = 0, frameN = 0, every = 1, fieldV = null, detHz = 0, lastDetT = 0, geom = null;
 
@@ -2384,6 +2397,8 @@ const Live = (() => {
     } catch (e) { /* sin permisos todavía */ }
   }
   function stopSource() {
+    if (src.nativeSub) { try { src.nativeSub.remove(); } catch (e) { /* noop */ } src.nativeSub = null; }
+    if (src.native) { src.native.stop().catch(() => {}); src.native = null; }
     if (src.stream) src.stream.getTracks().forEach((t) => t.stop());
     if (src.video) { try { src.video.pause(); } catch (e) { /* noop */ } }
     if (src.url) URL.revokeObjectURL(src.url);
@@ -2418,8 +2433,35 @@ const Live = (() => {
       else notice('No se pudo abrir la cámara', `${U.esc(e.name)}: ${U.esc(e.message)}`);
     }
   }
+  // APK Android: captura nativa de la pantalla (sirve para MotiConnect u otra app en pantalla dividida)
+  async function startNativeScreen() {
+    const SC = Env.plugin('ScreenCapture');
+    stopSource();
+    const cvs = document.createElement('canvas'), cx = cvs.getContext('2d');
+    Object.assign(cvs, { readyState: 0, paused: false, videoWidth: 0, videoHeight: 0, pause() {}, play() {} });
+    let busy = false;
+    try {
+      src.nativeSub = await SC.addListener('frame', (f) => {
+        if (busy) return; busy = true;
+        const im = new Image();
+        im.onload = () => { if (cvs.width !== im.width || cvs.height !== im.height) { cvs.width = im.width; cvs.height = im.height; } cx.drawImage(im, 0, 0); cvs.videoWidth = im.width; cvs.videoHeight = im.height; cvs.readyState = 4; busy = false; };
+        im.onerror = () => { busy = false; };
+        im.src = 'data:image/jpeg;base64,' + f.data;
+      });
+      await SC.start({ maxWidth: Number($('#liveRes').value) >= 640 ? 1600 : 1280, fps: 6, quality: 75 });
+      src.native = SC; src.video = cvs; src.name = 'Pantalla de Android';
+      $('#btnCamStop').disabled = false; tracker.reset(); sweep.reset(); renderSweep();
+      $('#liveHint').textContent = 'Capturando la pantalla de Android. Abra MotiConnect en pantalla dividida (o ventana emergente) junto a esta app.';
+      notice('Captura de pantalla activa', '<ol><li>Mantenga esta app visible y abra <b>MotiConnect</b> en <b>pantalla dividida</b> (botón de apps recientes → ícono de la app → «Abrir en vista de pantalla dividida») o en ventana emergente.</li><li>Ajuste el zoom del visor de MotiConnect y no lo cambie.</li><li>Pulse <b>Calibrar en vivo</b> sobre una distancia conocida de esa imagen (retícula o micrómetro).</li></ol>Para terminar pulse <b>Detener</b> (también desde la notificación de Android).');
+    } catch (e) {
+      stopSource();
+      if (/denegado|denied|cancel/i.test(String(e && e.message))) U.toast('No se autorizó la captura de pantalla.', 'err');
+      else notice('No se pudo iniciar la captura de pantalla', U.esc(e && e.message || e));
+    }
+  }
   async function startScreen() {
     notice(null);
+    if (Env.native && Env.plugin('ScreenCapture')) return startNativeScreen();
     if (!Env.canScreen) {
       if (!Env.secure || Env.inIframe) return explainBlocked('pantalla');
       return notice('Este dispositivo no permite compartir pantalla desde el navegador', `Android (Chrome, Samsung Internet) no lo permite; iPad/iPhone lo permiten desde iOS 27. Alternativas:${altHtml}`);
