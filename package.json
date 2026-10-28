@@ -1,0 +1,16 @@
+{
+  "name": "particulas-c175",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Identificador óptico de partículas para parches Millipore de monoblocks CAT C175 (APK Android con Capacitor).",
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/filesystem": "^7.0.0",
+    "@capacitor/share": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^7.0.0"
+  }
+}
