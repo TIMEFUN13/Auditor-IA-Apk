@@ -99,6 +99,10 @@ function configurar() {
   const sh = libro_();
   ScriptApp.getProjectTriggers().filter((t) => t.getHandlerFunction() === 'analisisDiario').forEach((t) => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('analisisDiario').timeBased().everyDays(1).atHour(6).create();
+  ScriptApp.getProjectTriggers().filter((t) => t.getHandlerFunction() === 'procesarCarpeta').forEach((t) => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('procesarCarpeta').timeBased().everyHours(1).create();
+  const dir = carpeta_(); procesarCarpeta();
+  Logger.log('Carpeta compartida (las tablets guardan ahí sus exportaciones): ' + dir.getUrl());
   Logger.log('CLAVE para las tablets: ' + clave);
   Logger.log('Hoja de cálculo: ' + sh.getParent().getUrl());
   Logger.log('Análisis diario programado a las 6:00. Ahora: Implementar → Nueva implementación → Aplicación web.');
@@ -159,4 +163,55 @@ function analisisDiario() {
     txt += '\n\nHoja: ' + ss.getUrl();
     MailApp.sendEmail(Session.getEffectiveUser().getEmail(), 'Partículas C175 · análisis diario' + (alerta.length ? ' · revisar' : ''), txt);
   }
+}
+
+/* ===================== intercambio por carpeta de Drive (sin internet en la tablet) =====================
+ * Para cuentas corporativas que no permiten la aplicación web abierta: cada tablet guarda su
+ * exportación en la carpeta compartida (con la app de Drive). Cada hora el script:
+ *   1) lee los archivos nuevos, agrega a la hoja SOLO los ejemplos confirmados por personas
+ *      (no los automáticos, no los que ya venían de otros sitios) y los mueve a «procesados»;
+ *   2) deja en la carpeta «biblioteca_particulas.json» con TODOS los ejemplos de todos los sitios,
+ *      que cada tablet carga con «Importar ejemplos». */
+const CARPETA = 'Partículas C175 · Intercambio';
+const BIBLIO = 'biblioteca_particulas.json';
+function carpeta_() {
+  const p = PropertiesService.getScriptProperties();
+  let dir = null; const id = p.getProperty('CARPETA_ID');
+  if (id) { try { dir = DriveApp.getFolderById(id); if (dir.isTrashed()) dir = null; } catch (e) { dir = null; } }
+  if (!dir) {
+    dir = DriveApp.createFolder(CARPETA); p.setProperty('CARPETA_ID', dir.getId());
+    try { dir.setSharing(DriveApp.Access.DOMAIN, DriveApp.Permission.EDIT); } catch (e) { /* la política de la empresa decide; se puede compartir a mano */ }
+  }
+  return dir;
+}
+function subcarpeta_(dir, nombre) { const it = dir.getFoldersByName(nombre); return it.hasNext() ? it.next() : dir.createFolder(nombre); }
+function procesarCarpeta() {
+  const sh = libro_(), dir = carpeta_(), proc = subcarpeta_(dir, 'procesados');
+  let agregados = 0, archivos = 0;
+  const it = dir.getFiles();
+  while (it.hasNext()) {
+    const f = it.next(), nombre = f.getName();
+    if (nombre === BIBLIO || !/\.json$/i.test(nombre)) continue;
+    let j = null; try { j = JSON.parse(f.getBlob().getDataAsString('UTF-8')); } catch (e) { j = null; }
+    if (j && Array.isArray(j.examples) && j.kind !== 'biblioteca') {
+      const propios = j.examples.filter((x) => x && !x.auto && !x.remote && x.label && x.label !== 'indet');
+      for (let i = 0; i < propios.length; i += 200) agregados += push_(sh, { examples: propios.slice(i, i + 200), site: j.site || '', app: j.version || '' }).added;
+      archivos++;
+    }
+    f.moveTo(proc);
+  }
+  const bib = dir.getFilesByName(BIBLIO);
+  if (agregados || !bib.hasNext()) escribirBiblioteca_(sh, dir);
+  Logger.log('Carpeta: ' + archivos + ' archivo(s), ' + agregados + ' ejemplo(s) nuevos.');
+  return { archivos: archivos, agregados: agregados };
+}
+function escribirBiblioteca_(sh, dir) {
+  const last = sh.getLastRow(), vals = last > 1 ? sh.getRange(2, 1, last - 1, COLS.length).getValues() : [];
+  const ex = [];
+  vals.forEach((r) => { let f = null; try { f = JSON.parse(r[6]); } catch (e) { return; }
+    ex.push({ id: String(r[0]), label: String(r[3]), f: f, thumb: String(r[7] || ''), src: String(r[4]), site: String(r[2]), at: String(r[5]), synced: true }); });
+  let txt = JSON.stringify({ app: 'pv-c175', kind: 'biblioteca', at: new Date().toISOString(), examples: ex });
+  if (txt.length > 9e6) { ex.forEach((e) => (e.thumb = '')); txt = JSON.stringify({ app: 'pv-c175', kind: 'biblioteca', at: new Date().toISOString(), examples: ex }); }
+  const it = dir.getFilesByName(BIBLIO);
+  if (it.hasNext()) it.next().setContent(txt); else dir.createFile(BIBLIO, txt, 'application/json');
 }

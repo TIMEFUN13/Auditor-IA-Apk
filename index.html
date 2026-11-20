@@ -712,7 +712,7 @@ td.n{text-align:right;font:600 14px var(--display)}
         </div>
         <div class="panel c5">
           <h3>Guardar y compartir</h3>
-          <div class="row" style="margin-bottom:10px"><button class="btn" id="mlSync">Sincronizar ahora</button><span class="hint" id="mlSyncTxt" style="margin:0">Sincronización entre sitios: sin configurar (Ajustes).</span></div>
+          <div class="row" style="margin-bottom:10px"><button class="btn pri" id="mlShare">Enviar a la carpeta compartida</button><button class="btn" id="mlSync">Sincronizar ahora</button><span class="hint" id="mlSyncTxt" style="margin:0">Sincronización entre sitios: sin configurar (Ajustes).</span></div>
           <div class="row">
             <button class="btn pri" id="mlDlApp">Descargar la app con estos ejemplos</button>
             <button class="btn" id="mlExport">Exportar ejemplos (.json)</button>
@@ -720,7 +720,8 @@ td.n{text-align:right;font:600 14px var(--display)}
             <button class="btn" id="mlImport">Importar ejemplos</button>
             <button class="btn danger" id="mlClear">Borrar todos</button>
           </div>
-          <p class="hint" style="margin-top:10px">Los ejemplos se guardan en este navegador. Exporte con frecuencia: borrar los datos del navegador los elimina.</p>
+          <p class="hint" style="margin-top:10px"><b>Compartir entre sitios (Ferreyros):</b> «Enviar a la carpeta compartida» → elija <b>Drive</b> → carpeta <b>Partículas C175 · Intercambio</b>. Cada hora se juntan los de todos los sitios en <b>biblioteca_particulas.json</b> dentro de esa carpeta: cárguela con «Importar ejemplos».</p>
+          <p class="hint">Los ejemplos se guardan en este equipo. <b>No desinstale la app</b>: borra lo aprendido. Exporte con frecuencia.</p>
           <details style="margin-top:8px"><summary class="hint" style="cursor:pointer">¿Por qué no viene entrenado con las fotos de la SEHS0772?</summary>
             <p class="hint">Lo probamos con 248 partículas de 16 fotos de la guía. Validando con fotos que no vio, acertó solo el 54–57 %: cada foto de la guía tiene otra cámara, aumento y luz, y el modelo aprende esas diferencias en vez del material. Simulando fotos del mismo equipo (mitades de cada foto) subió a 89,5 % de aciertos, pero aún dejó pasar el 10 % de las abrasivas: por eso solo se activa si sus propias fotos demuestran ≤ 3 %.</p></details>
         </div>
@@ -1811,7 +1812,7 @@ onmessage = (e) => {
  * ===================================================================== */
 // Copia íntegra del documento ANTES de que el script lo modifique: permite
 // descargar la app (con los ejemplos de aprendizaje incluidos) desde cualquier copia.
-const APP_VERSION = '2.2.1';
+const APP_VERSION = '2.3.0';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
@@ -3502,6 +3503,13 @@ const Learn = (() => {
   }
   function bind() {
     $('#mlSync').onclick = () => sync(true);
+    $('#mlShare').onclick = () => {
+      const own = ex.filter((e) => !e.auto && !e.remote && e.label !== 'indet');
+      if (!own.length) return U.toast('Todavía no hay ejemplos confirmados en esta tablet.', 'info');
+      const site = (CFG.site || 'sitio').replace(/[^\w-]+/g, '_').slice(0, 30);
+      U.download(`ejemplos_${site}_${U.stamp()}.json`, new Blob([JSON.stringify({ app: 'pv-c175', version: APP_VERSION, site: CFG.site || '', features: PV.FEAT_KEYS, examples: own })], { type: 'application/json' }));
+      if (!CFG.site) U.toast('Consejo: escriba el sitio y equipo en Ajustes para identificar de dónde viene cada ejemplo.', 'info', 7000);
+    };
     window.addEventListener('online', () => setTimeout(() => sync(false), 3000));
     if (syncCfg().at) syncText('Última sincronización: ' + new Date(syncCfg().at).toLocaleString('es-PE') + '.');
     $('#mlAuto').addEventListener('change', () => { CFG.ml.auto = $('#mlAuto').checked; Cfg.save(); });
@@ -3534,8 +3542,8 @@ const Learn = (() => {
       try {
         const j = JSON.parse(await f.text()), arr = (j.examples || []).filter((x) => x && x.id && x.f && PV.LABELS[x.label]);
         const have = new Set(ex.map((x) => x.id)); let n = 0;
-        for (const x of arr) if (!have.has(x.id)) { await DB.put(x); ex.push(x); n++; }
-        retrain(); U.toast(`${n} ejemplos importados (${arr.length - n} ya estaban).`, 'ok');
+        for (const x of arr) if (!have.has(x.id)) { if (j.kind === 'biblioteca' || (x.site && x.site !== (CFG.site || ''))) { x.remote = true; x.synced = true; } x.key = x.key || 'importado|' + x.id; await DB.put(x); ex.push(x); n++; }
+        retrain(); U.toast(`${n} ejemplos importados (${arr.length - n} ya estaban)${j.kind === 'biblioteca' ? ' desde la biblioteca de todos los sitios' : ''}.`, 'ok');
       } catch (err) { U.toast('El archivo no es una exportación válida de ejemplos.', 'err'); }
     });
     $('#mlClear').onclick = async () => { if (!(await U.confirm(`¿Borrar los <b>${ex.length}</b> ejemplos de este navegador? Exporte antes si los necesita.`, 'Borrar todo', true))) return; await DB.clear(); ex = []; sel.clear(); retrain(); };
