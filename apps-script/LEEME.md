@@ -8,8 +8,7 @@ Los ejemplos automáticos nunca se envían.
 1. Abra [script.google.com](https://script.google.com) → su proyecto **AUDITOR IA** (o uno nuevo).
 2. Cree un archivo `Sincronizacion.gs` y pegue el contenido de `Code.gs`.
    Si su proyecto ya tiene `doGet` o `doPost`, use un proyecto nuevo solo para esto.
-3. ⚙️ Configuración del proyecto → **Propiedades del script** → agregar `CLAVE` con una clave larga
-   (por ejemplo 24 letras y números al azar). Solo sus tablets deben conocerla.
+3. Elija la función **configurar** y pulse **Ejecutar**: crea la clave, la hoja y el análisis diario (la clave aparece en el registro de ejecución).
 4. **Implementar → Nueva implementación → Aplicación web**
    - Ejecutar como: **Yo**
    - Quién tiene acceso: **Cualquier usuario** (la clave protege los datos)
@@ -27,3 +26,12 @@ Los ejemplos automáticos nunca se envían.
 ## Límites (cuenta gratuita de Google)
 - Hoja de cálculo: 10 millones de celdas (≈ 1 millón de ejemplos). Cada ejemplo ocupa 9 celdas.
 - Apps Script: 20 000 llamadas por día. Cada sincronización usa 2 o 3.
+
+## Análisis diario automático
+Cada día a las 6:00 el script revisa toda la biblioteca y guarda el resultado en la pestaña **analisis**
+de la hoja (sirve para gráficos en Sheets o Looker Studio):
+- ejemplos totales y nuevos por sitio;
+- **discrepancia con otros sitios**: para cada ejemplo busca el más parecido de otro sitio; si sus clases no
+  coinciden a menudo, ese sitio etiqueta distinto (criterio, cámara o luz);
+- **abrasivas parecidas a blandas**: el error caro.
+Le llega un correo cuando hay ejemplos nuevos o algo que revisar.
