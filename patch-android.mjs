@@ -18,6 +18,8 @@ const perms = [
   '<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />',
   '<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />',
   '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />',
+  '<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />',
+  '<uses-permission android:name="android.permission.INTERNET" />',
 ].filter((l) => !x.includes(l));
 if (perms.length) x = x.replace('</manifest>', '    ' + perms.join('\n    ') + '\n</manifest>');
 const svc = '<service android:name=".ScreenCaptureService" android:exported="false" android:foregroundServiceType="mediaProjection" />';
@@ -36,6 +38,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(ScreenCapturePlugin.class);
+        registerPlugin(CamStreamPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }
@@ -96,6 +99,178 @@ public class ScreenCapturePlugin extends Plugin {
         getContext().stopService(new Intent(getContext(), ScreenCaptureService.class));
         call.resolve();
     }
+}
+`);
+
+/* ---------- Complemento: video directo de cámaras WiFi de microscopio (Moticam X/X3/X5…) ----------
+   Lee el video MJPEG (o imágenes JPEG sueltas) que la cámara sirve por HTTP en su propia red WiFi,
+   a la calidad original de la cámara: sin MotiConnect y sin captura de pantalla. */
+writeFileSync(`${pkgDir}/CamStreamPlugin.java`, `package ${appId};
+
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.util.Base64;
+import com.getcapacitor.JSObject;
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginCall;
+import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.CapacitorPlugin;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+@CapacitorPlugin(name = "CamStream")
+public class CamStreamPlugin extends Plugin {
+
+    private volatile boolean running = false;
+    private volatile Thread worker = null;
+    private volatile HttpURLConnection conn = null;
+
+    // La WiFi de la cámara no tiene internet: Android podría mandar el tráfico por datos móviles.
+    // Se abre la conexión explícitamente por la red WiFi.
+    private Network wifi() {
+        try {
+            ConnectivityManager cm = (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+            for (Network n : cm.getAllNetworks()) {
+                NetworkCapabilities nc = cm.getNetworkCapabilities(n);
+                if (nc != null && nc.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) return n;
+            }
+        } catch (Exception e) { /* sin permiso o sin WiFi */ }
+        return null;
+    }
+
+    private HttpURLConnection open(String url, int timeout) throws Exception {
+        Network w = wifi();
+        URL u = new URL(url);
+        HttpURLConnection c = (HttpURLConnection) (w != null ? w.openConnection(u) : u.openConnection());
+        c.setConnectTimeout(timeout);
+        c.setReadTimeout(timeout);
+        c.setUseCaches(false);
+        c.setRequestProperty("Cache-Control", "no-cache");
+        c.setInstanceFollowRedirects(true);
+        return c;
+    }
+
+    /** Prueba una dirección: tipo de contenido, primeros bytes y, si es una imagen, la imagen completa. */
+    @PluginMethod
+    public void probe(PluginCall call) {
+        final String url = call.getString("url");
+        final int timeout = call.getInt("timeout", 2500);
+        final int max = call.getInt("maxBytes", 6 * 1024 * 1024);
+        new Thread(() -> {
+            HttpURLConnection c = null;
+            try {
+                c = open(url, timeout);
+                int code = c.getResponseCode();
+                String type = String.valueOf(c.getContentType());
+                InputStream in = code < 400 ? c.getInputStream() : c.getErrorStream();
+                boolean multipart = type.toLowerCase().contains("multipart");
+                int limit = multipart ? 300000 : max;
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                byte[] buf = new byte[16384];
+                long t0 = System.currentTimeMillis();
+                int n;
+                while (in != null && out.size() < limit && (n = in.read(buf)) > 0) {
+                    out.write(buf, 0, n);
+                    if (multipart && System.currentTimeMillis() - t0 > 1500) break;
+                }
+                byte[] b = out.toByteArray();
+                JSObject o = new JSObject();
+                o.put("status", code);
+                o.put("type", type);
+                o.put("size", b.length);
+                o.put("multipart", multipart);
+                int head = Math.min(b.length, 60000);
+                o.put("text", new String(b, 0, head, "ISO-8859-1"));
+                boolean jpeg = b.length > 3 && (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xD8;
+                o.put("jpeg", jpeg);
+                if (jpeg && !multipart) o.put("data", Base64.encodeToString(b, Base64.NO_WRAP));
+                call.resolve(o);
+            } catch (Exception e) {
+                call.reject(String.valueOf(e.getMessage() != null ? e.getMessage() : e));
+            } finally {
+                if (c != null) c.disconnect();
+            }
+        }).start();
+    }
+
+    /** Abre el video MJPEG y envía cada cuadro JPEG (base64) al evento «frame». Se reconecta solo. */
+    @PluginMethod
+    public void start(PluginCall call) {
+        stopWorker();
+        final String url = call.getString("url");
+        final long interval = 1000L / Math.max(1, call.getInt("fps", 15));
+        running = true;
+        worker = new Thread(() -> {
+            while (running) {
+                try {
+                    HttpURLConnection c = open(url, 6000);
+                    conn = c;
+                    InputStream in = c.getInputStream();
+                    byte[] buf = new byte[65536];
+                    ByteArrayOutputStream frame = new ByteArrayOutputStream(262144);
+                    boolean inFrame = false;
+                    int prev = -1;
+                    long last = 0;
+                    int n;
+                    while (running && (n = in.read(buf)) > 0) {
+                        int start = 0;
+                        for (int i = 0; i < n; i++) {
+                            int v = buf[i] & 0xFF;
+                            if (!inFrame) {
+                                if (prev == 0xFF && v == 0xD8) { inFrame = true; frame.reset(); frame.write(0xFF); start = i; }
+                            } else if (prev == 0xFF && v == 0xD9) {
+                                frame.write(buf, start, i - start + 1);
+                                inFrame = false;
+                                long now = System.currentTimeMillis();
+                                if (now - last >= interval && hasListeners("frame")) {
+                                    last = now;
+                                    JSObject o = new JSObject();
+                                    o.put("data", Base64.encodeToString(frame.toByteArray(), Base64.NO_WRAP));
+                                    notifyListeners("frame", o);
+                                }
+                            }
+                            prev = v;
+                        }
+                        if (inFrame) {
+                            frame.write(buf, start, n - start);
+                            if (frame.size() > 12 * 1024 * 1024) { inFrame = false; frame.reset(); }
+                        }
+                    }
+                    c.disconnect();
+                } catch (Exception e) {
+                    JSObject o = new JSObject();
+                    o.put("error", String.valueOf(e.getMessage() != null ? e.getMessage() : e));
+                    notifyListeners("status", o);
+                }
+                if (running) { try { Thread.sleep(1000); } catch (InterruptedException ie) { break; } }
+            }
+        }, "camara-wifi");
+        worker.start();
+        call.resolve();
+    }
+
+    private void stopWorker() {
+        running = false;
+        HttpURLConnection c = conn;
+        if (c != null) { try { c.disconnect(); } catch (Exception e) { /* noop */ } }
+        conn = null;
+        Thread w = worker;
+        if (w != null) w.interrupt();
+        worker = null;
+    }
+
+    @PluginMethod
+    public void stop(PluginCall call) {
+        stopWorker();
+        call.resolve();
+    }
+
+    @Override
+    protected void handleOnDestroy() { stopWorker(); }
 }
 `);
 

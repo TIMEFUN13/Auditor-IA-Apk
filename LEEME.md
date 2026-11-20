@@ -18,6 +18,21 @@ La app va completa dentro del APK: no necesita internet ni servidor.
 Reemplace `www/index.html` por la versión nueva (por ejemplo, la app descargada con sus ejemplos de
 aprendizaje desde la pestaña «Aprendizaje») y súbalo: GitHub compila un APK nuevo. Instálelo encima del anterior.
 
+## Novedades 2.2 · conexión directa a la Moticam, versión web y sincronización
+- **«En vivo» → «Moticam»**: la app se conecta directo a la cámara del estereoscopio, como MotiConnect, pero con
+  la imagen original de la cámara (no la captura de pantalla borrosa).
+  1. Conecte la tablet a la WiFi de la cámara (nombre `MoticamX3_…` en la etiqueta, clave de fábrica `12345678`).
+  2. Cierre MotiConnect (la cámara atiende mejor a una sola app).
+  3. Pulse **Conectar** con la dirección vacía: la busca sola (`192.168.1.151:8080` en Moticam X/X3/X5),
+     la pasa a modo JPEG (`/?H264=0`) y abre su video.
+  4. **Analizar este cuadro** pide a la cámara la foto completa (hasta 2592×1520 en Moticam X3).
+  - Si no conecta, pulse **Informe** y envíe el archivo: trae lo que respondió la cámara para ajustar el conector a su modelo.
+  - Si la cámara está conectada a un router, escriba su dirección (por ejemplo `192.168.3.110:8080`).
+- **Versión web gratis** (GitHub Pages): la misma app en `https://<su-usuario>.github.io/Auditor-IA-Apk/`, instalable
+  en PC y funciona sin internet tras abrirla una vez. Activar una sola vez: repositorio → **Settings → Pages →
+  Source: GitHub Actions**. La conexión directa a la cámara solo funciona en la APK (los navegadores lo bloquean).
+- **Sincronización del aprendizaje entre sitios** con Google Apps Script (gratis): vea `apps-script/LEEME.md`.
+
 ## Novedades 2.1 · aprendizaje que mejora solo (sin internet)
 - **Modelo nuevo**: bosque aleatorio (60 árboles) + vecinos más cercanos (k-NN). Entrena en milisegundos en la tablet.
   Es sensible al costo: confundir una abrasiva con blanda pesa el doble, y si el modelo ve ≥ 40 % de probabilidad

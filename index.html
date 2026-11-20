@@ -515,7 +515,7 @@ td.n{text-align:right;font:600 14px var(--display)}
         <div class="seg" id="liveMode">
           <button data-mode="cam" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Cámara</button>
           <button data-mode="screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>Pantalla</button>
-          <button data-mode="wifi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg>Cámara WiFi</button>
+          <button data-mode="wifi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg>Moticam</button>
           <button data-mode="video"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg>Video</button>
         </div>
         <div class="row" id="camBar">
@@ -525,9 +525,9 @@ td.n{text-align:right;font:600 14px var(--display)}
         </div>
         <div class="row" id="screenBar" hidden><button class="btn pri" id="btnScreen">Compartir pantalla o ventana</button></div>
         <div class="row" id="wifiBar" hidden>
-          <input type="url" id="wifiUrl" placeholder="http://192.168.1.1/snapshot.jpg" style="width:auto;min-width:260px" inputmode="url" autocomplete="off">
+          <input type="text" id="wifiUrl" placeholder="192.168.1.151:8080 (automático)" style="width:auto;min-width:230px" inputmode="url" autocomplete="off" spellcheck="false">
           <button class="btn pri" id="btnWifi">Conectar</button>
-          <button class="btn" id="btnWifiScan">Buscar</button>
+          <button class="btn" id="btnWifiScan" title="Guarda lo que la app probó con la cámara, para adaptar el conector a su modelo">Informe</button>
         </div>
         <div class="row" id="vidBar" hidden>
           <input type="file" id="vidIn" accept="video/*" hidden>
@@ -712,6 +712,7 @@ td.n{text-align:right;font:600 14px var(--display)}
         </div>
         <div class="panel c5">
           <h3>Guardar y compartir</h3>
+          <div class="row" style="margin-bottom:10px"><button class="btn" id="mlSync">Sincronizar ahora</button><span class="hint" id="mlSyncTxt" style="margin:0">Sincronización entre sitios: sin configurar (Ajustes).</span></div>
           <div class="row">
             <button class="btn pri" id="mlDlApp">Descargar la app con estos ejemplos</button>
             <button class="btn" id="mlExport">Exportar ejemplos (.json)</button>
@@ -757,6 +758,12 @@ td.n{text-align:right;font:600 14px var(--display)}
   </div>
   <label class="chk"><input type="checkbox" id="sRed" checked> Ignorar trazos rojos y recuadros azules de medición</label>
   <div class="field" style="margin-top:10px"><label for="sSite">Sitio y equipo (se guarda en cada ejemplo, para combinar bibliotecas de varios lugares)</label><input type="text" id="sSite" placeholder="Ej.: Taller Lima · estereoscopio 2"></div>
+  <h4 style="margin:14px 0 6px;font:600 16px var(--display)">Sincronizar el aprendizaje entre sitios</h4>
+  <p class="hint" style="margin-top:0">Gratis con Google Apps Script (vea <b>apps-script/LEEME.md</b> del repositorio). La tablet trabaja sin internet; cuando tiene señal, envía sus ejemplos confirmados y recibe los de los demás sitios.</p>
+  <div class="row">
+    <div class="field grow"><label for="sSyncUrl">Dirección de la aplicación web (…/exec)</label><input type="url" id="sSyncUrl" placeholder="https://script.google.com/macros/s/…/exec" spellcheck="false"></div>
+    <div class="field" style="width:150px"><label for="sSyncKey">Clave</label><input type="password" id="sSyncKey" autocomplete="off"></div>
+  </div>
   <div class="row" style="margin-top:14px"><button class="btn pri" id="btnSaveSettings">Guardar</button></div>
 </div></div>
 
@@ -1804,7 +1811,7 @@ onmessage = (e) => {
  * ===================================================================== */
 // Copia íntegra del documento ANTES de que el script lo modifique: permite
 // descargar la app (con los ejemplos de aprendizaje incluidos) desde cualquier copia.
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '2.2.0';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
@@ -2681,58 +2688,191 @@ const Live = (() => {
       else U.toast('No se compartió la pantalla (' + U.esc(e.name) + ').', 'err');
     }
   }
-  /* Cámara WiFi del estereoscopio: muchas cámaras WiFi de microscopio sirven una imagen JPEG por
-     HTTP dentro de su propia red (sin internet). Se pide una y otra vez y se analiza como video.
-     En la APK se usa el HTTP nativo de Capacitor (sin bloqueo CORS ni de contenido mixto). */
-  const WIFI_GUESS = ['http://192.168.1.1/snapshot.jpg', 'http://192.168.1.1/snapshot.cgi', 'http://192.168.1.1/cgi-bin/snapshot.cgi', 'http://192.168.1.1/capture', 'http://192.168.1.1:8080/shot.jpg', 'http://192.168.0.1/snapshot.jpg', 'http://192.168.10.1/snapshot.jpg', 'http://192.168.100.1/snapshot.jpg', 'http://10.10.10.1/snapshot.jpg', 'http://192.168.43.1:8080/shot.jpg'];
-  async function grabJpeg(url, ms) {
-    const H = Env.native ? Env.plugin('CapacitorHttp') : null, ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    const to = setTimeout(() => ctl && ctl.abort(), ms || 2500);
-    try {
-      if (H && H.request) {
-        const r = await H.request({ url, method: 'GET', responseType: 'blob', connectTimeout: ms || 2500, readTimeout: ms || 2500, headers: { 'Cache-Control': 'no-cache' } });
-        if (r.status !== 200 || !r.data) throw new Error('HTTP ' + r.status);
-        return U.dataURLtoBlob('data:image/jpeg;base64,' + String(r.data).replace(/^data:[^,]*,/, ''));
-      }
-      const r = await fetch(url + (url.includes('?') ? '&' : '?') + '_=' + Date.now(), { cache: 'no-store', signal: ctl && ctl.signal });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      const b = await r.blob(); if (!/^image\//.test(b.type) && b.size < 2000) throw new Error('no es una imagen');
-      return b;
-    } finally { clearTimeout(to); }
+  /* =========== Moticam y otras cámaras WiFi de microscopio: conexión DIRECTA ===========
+     La Moticam X/X3/X5 crea su propia red WiFi (clave de fábrica 12345678) y sirve su imagen por
+     HTTP en http://192.168.1.151:8080 (modo JPEG; «/?H264=0» la pasa a JPEG). La app se conecta
+     sola, como MotiConnect, a la calidad original de la cámara: sin captura de pantalla.
+     En la APK se usa el complemento nativo «CamStream» (lee el video MJPEG por la red WiFi aunque
+     esa red no tenga internet). Todo lo que prueba queda en un informe para diagnosticar. */
+  const CAM_HOSTS = ['192.168.1.151:8080', '192.168.2.151:8080', '192.168.1.1:8080', '192.168.1.1', '192.168.0.1', '192.168.10.1', '192.168.100.1'];
+  const STREAM_PATHS = ['/?action=stream', '/stream', '/video', '/mjpeg', '/mjpg', '/live', '/video.mjpg', '/mjpeg.cgi', '/videostream.cgi', '/cgi-bin/mjpeg', '/livestream', '/stream.mjpg'];
+  const SNAP_PATHS = ['/?action=snapshot', '/snapshot.jpg', '/snapshot.cgi', '/snap.jpg', '/capture', '/image.jpg', '/jpg/image.jpg', '/cgi-bin/snapshot.cgi', '/still.jpg', '/photo.jpg', '/shot.jpg'];
+  const cam = { base: '', kind: '', url: '', snap: '', log: [], job: null, sub: null, ws: null };
+  const CS = () => (Env.native ? Env.plugin('CamStream') : null);
+  const camNote = (o) => { cam.log.push(Object.assign({ t: new Date().toISOString() }, o)); if (cam.log.length > 200) cam.log.shift(); };
+  function normBase(s) {
+    s = String(s || '').trim().replace(/\/+$/, '');
+    if (!s) return '';
+    if (!/^[a-z]+:\/\//i.test(s)) s = 'http://' + s;
+    try { const u = new URL(s); return u.origin; } catch (e) { return ''; }
   }
-  async function startWifi(url) {
-    notice(null);
-    url = (url || $('#wifiUrl').value || '').trim();
-    if (!/^https?:\/\//i.test(url)) { U.toast('Escriba la dirección de la imagen de la cámara (http://…)', 'err'); return; }
-    stopSource();
+  // GET con diagnóstico: { status, type, text, jpeg, data(base64), multipart, size }
+  async function camGet(url, ms) {
+    const P = CS();
+    try {
+      let r;
+      if (P && P.probe) r = await P.probe({ url, timeout: ms || 2500 });
+      else {
+        const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), ms || 2500);
+        try {
+          const res = await fetch(url, { cache: 'no-store', signal: ctl.signal });
+          const type = res.headers.get('content-type') || '', multipart = /multipart/i.test(type);
+          if (multipart) { ctl.abort(); r = { status: res.status, type, multipart, size: 0, text: '' }; }
+          else {
+            const buf = new Uint8Array(await res.arrayBuffer()), jpeg = buf[0] === 0xFF && buf[1] === 0xD8;
+            let bin = ''; if (jpeg) for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+            r = { status: res.status, type, multipart, size: buf.length, jpeg, data: jpeg ? btoa(bin) : null, text: jpeg ? '' : new TextDecoder('latin1').decode(buf.subarray(0, 60000)) };
+          }
+        } finally { clearTimeout(to); }
+      }
+      camNote({ url, status: r.status, type: r.type, size: r.size, multipart: !!r.multipart, jpeg: !!r.jpeg, head: r.jpeg ? '' : String(r.text || '').slice(0, 3000) });
+      return r;
+    } catch (e) { camNote({ url, error: String(e && e.message || e) }); return null; }
+  }
+  // Busca en la página de la cámara (y en sus scripts) las direcciones de video e imagen
+  function camCandidates(base, text) {
+    const out = new Set(), re = /(?:src|href|url|data)\s*[=:(]\s*["']?([^"'\s)>]+)|["']((?:ws|wss|http):\/\/[^"']+|\/[^"'\s<>]*)["']/gi;
+    let m;
+    while ((m = re.exec(text))) {
+      const p = m[1] || m[2]; if (!p || p.length > 200) continue;
+      if (/(mjpe?g|stream|snap|\.jpe?g|\.cgi|video|live|capture|action=|^wss?:)/i.test(p) && !/\.(css|png|gif|svg|ico)(\?|$)/i.test(p)) {
+        try { out.add(/^wss?:/i.test(p) ? p : new URL(p, base + '/').href); } catch (e) { /* noop */ }
+      }
+    }
+    return [...out];
+  }
+  function camScripts(base, text) {
+    const out = []; const re = /<script[^>]+src\s*=\s*["']([^"']+)["']/gi; let m;
+    while ((m = re.exec(text)) && out.length < 6) { try { out.push(new URL(m[1], base + '/').href); } catch (e) { /* noop */ } }
+    return out;
+  }
+  function tryWs(url) {
+    return new Promise((res) => {
+      let ws, done = false; const fin = (v) => { if (done) return; done = true; if (!v && ws) try { ws.close(); } catch (e) { /* noop */ } res(v); };
+      try { ws = new WebSocket(url); ws.binaryType = 'arraybuffer'; } catch (e) { camNote({ url, error: 'ws ' + e.message }); return res(null); }
+      const to = setTimeout(() => fin(null), 3500);
+      ws.onmessage = (e) => { if (e.data instanceof ArrayBuffer) { const b = new Uint8Array(e.data); const k = b.indexOf(0xFF); if (k >= 0 && b[k + 1] === 0xD8) { clearTimeout(to); camNote({ url, ws: 'jpeg' }); fin(ws); } } };
+      ws.onerror = () => { camNote({ url, error: 'ws error' }); clearTimeout(to); fin(null); };
+    });
+  }
+  async function camDiscover(base) {
+    cam.log = [];
+    // la cámara puede haber quedado en H264 por MotiConnect: el navegador necesita JPEG
+    await camGet(base + '/?H264=0', 2500);
+    const home = await camGet(base + '/', 3000);
+    if (!home) return null;
+    let cands = camCandidates(base, home.text || '');
+    for (const s of camScripts(base, home.text || '')) { const r = await camGet(s, 2500); if (r && r.text) cands = cands.concat(camCandidates(base, r.text)); }
+    cands = [...new Set(cands)];
+    camNote({ candidates: cands });
+    const http = cands.filter((u) => /^https?:/i.test(u)).concat(STREAM_PATHS.map((p) => base + p), SNAP_PATHS.map((p) => base + p));
+    let found = null, snap = '';
+    for (const u of [...new Set(http)]) {
+      const r = await camGet(u, 2500); if (!r) continue;
+      if (r.multipart && !found) found = { kind: 'mjpeg', url: u };
+      else if (r.jpeg && !snap) { snap = u; if (!found) found = { kind: 'snap', url: u }; }
+      if (found && found.kind === 'mjpeg' && snap) break;
+    }
+    if (!found || found.kind === 'snap') for (const u of cands.filter((x) => /^wss?:/i.test(x))) { const ws = await tryWs(u); if (ws) { found = { kind: 'ws', url: u, ws }; break; } }
+    if (found) found.snap = snap;
+    return found;
+  }
+  function camCanvas() {
     const cvs = document.createElement('canvas'), cx = cvs.getContext('2d');
     Object.assign(cvs, { readyState: 0, paused: false, videoWidth: 0, videoHeight: 0, pause() {}, play() {} });
-    const job = { on: true, fails: 0 };
-    try {
-      const first = await grabJpeg(url, 3000), bm = await createImageBitmap(first);
-      cvs.width = bm.width; cvs.height = bm.height; cx.drawImage(bm, 0, 0); cvs.videoWidth = bm.width; cvs.videoHeight = bm.height; cvs.readyState = 4;
-    } catch (e) {
-      return notice('No se pudo leer la cámara WiFi', `Dirección probada: <b>${U.esc(url)}</b> (${U.esc(e.message || e)}).<ul><li>Conecte la tablet a la red WiFi de la cámara del estereoscopio.</li><li>Busque en el manual de la cámara la dirección de «instantánea» o «snapshot» (o pruebe «Buscar»).</li><li>Si la cámara solo se ve en su propia app (por ejemplo MotiConnect), use el modo <b>Pantalla</b> con esa app en pantalla dividida: funciona siempre.</li></ul>`);
-    }
-    (async function pump() {
-      while (job.on) {
-        const t0 = performance.now();
-        try { const bm = await createImageBitmap(await grabJpeg(url, 2500)); if (!job.on) break; if (cvs.width !== bm.width || cvs.height !== bm.height) { cvs.width = bm.width; cvs.height = bm.height; } cx.drawImage(bm, 0, 0); cvs.videoWidth = bm.width; cvs.videoHeight = bm.height; job.fails = 0; }
-        catch (e) { if (++job.fails === 8) U.toast('La cámara WiFi dejó de responder. ¿Se desconectó la red?', 'err', 6000); await new Promise((r) => setTimeout(r, 500)); }
-        await new Promise((r) => setTimeout(r, Math.max(0, 120 - (performance.now() - t0)))); // ≈ 8 imágenes/s como máximo
-      }
-    })();
-    src.native = { stop: async () => { job.on = false; } }; src.video = cvs; src.name = 'Cámara WiFi';
-    try { localStorage.setItem('pv2.wifiUrl', url); } catch (e) { /* noop */ }
-    $('#btnCamStop').disabled = false; tracker.reset(); sweep.reset(); renderSweep();
-    $('#liveHint').textContent = `Cámara WiFi ${cvs.videoWidth}×${cvs.videoHeight} · ${url} · escala: ${Cfg.profile().name}`;
+    let busy = false;
+    cvs.feed = async (blob) => {
+      if (busy) return; busy = true;
+      try { const bm = await createImageBitmap(blob); if (cvs.width !== bm.width || cvs.height !== bm.height) { cvs.width = bm.width; cvs.height = bm.height; } cx.drawImage(bm, 0, 0); bm.close && bm.close(); cvs.videoWidth = cvs.width; cvs.videoHeight = cvs.height; cvs.readyState = 4; }
+      catch (e) { /* cuadro dañado */ } finally { busy = false; }
+    };
+    return cvs;
   }
-  async function scanWifi() {
-    U.toast('Buscando la cámara en las direcciones habituales…', 'info', 3000);
-    for (const u of WIFI_GUESS) {
-      try { const b = await grabJpeg(u, 1200); if (b && b.size > 2000) { $('#wifiUrl').value = u; U.toast('Cámara encontrada: ' + U.esc(u), 'ok'); return startWifi(u); } } catch (e) { /* siguiente */ }
+  const b64Blob = (b64) => U.dataURLtoBlob('data:image/jpeg;base64,' + b64);
+  async function startWifi(addr) {
+    notice(null);
+    const typed = normBase(addr != null ? addr : $('#wifiUrl').value);
+    if (!Env.native && location.protocol === 'https:')
+      return notice('La conexión directa a la cámara necesita la app instalada (APK)', 'Los navegadores no dejan que una página web segura (https) lea una cámara de la red local. En la tablet use la APK; en una PC, abra el archivo .html descargado («Usar sin internet») estando conectado a la WiFi de la cámara.');
+    stopSource();
+    $('#liveHint').textContent = 'Buscando la cámara… (conecte la tablet a la WiFi de la cámara: MoticamX3_…, clave de fábrica 12345678)';
+    let found = null, base = '';
+    for (const b of typed ? [typed] : CAM_HOSTS.map(normBase)) {
+      const r = await camGet(b + '/', 1500);
+      if (r && r.status && r.status < 500) { base = b; found = await camDiscover(b); if (found) break; }
     }
-    notice('No se encontró la cámara en las direcciones habituales', 'Escriba la dirección exacta del manual de la cámara, o use el modo <b>Pantalla</b> con la app del fabricante (MotiConnect u otra) en pantalla dividida.');
+    if (!found) {
+      $('#liveHint').textContent = 'No se pudo abrir el video de la cámara.';
+      return notice('No se pudo abrir el video de la cámara', `${base ? `La cámara responde en <b>${U.esc(base)}</b>, pero no se encontró su video.` : 'No respondió ninguna dirección conocida (192.168.1.151:8080 en Moticam).'}<ul><li>Conecte la tablet a la WiFi de la cámara (nombre en la etiqueta, clave de fábrica <b>12345678</b>) y cierre MotiConnect.</li><li>Si la cámara está conectada a un router, escriba su dirección (por ejemplo 192.168.3.110:8080).</li><li>Pulse <b>Informe</b> y envíe el archivo: con él se adapta el conector a su modelo.</li><li>Mientras tanto, el modo <b>Pantalla</b> con MotiConnect funciona igual.</li></ul>`);
+    }
+    Object.assign(cam, { base, kind: found.kind, url: found.url, snap: found.snap || '' });
+    const cvs = camCanvas();
+    if (found.kind === 'mjpeg' && CS()) {
+      cam.sub = await CS().addListener('frame', (f) => cvs.feed(b64Blob(f.data)));
+      await CS().start({ url: found.url, fps: 20 });
+    } else if (found.kind === 'mjpeg') {
+      // navegador (PC en la WiFi de la cámara): lectura del video MJPEG por fetch
+      const job = cam.job = { on: true, ctl: new AbortController() };
+      (async () => {
+        while (job.on) {
+          try {
+            const res = await fetch(found.url, { cache: 'no-store', signal: job.ctl.signal }), rd = res.body.getReader();
+            let buf = new Uint8Array(0);
+            while (job.on) {
+              const { value, done } = await rd.read(); if (done) break;
+              const nb = new Uint8Array(buf.length + value.length); nb.set(buf); nb.set(value, buf.length); buf = nb;
+              for (;;) {
+                let a = -1, b = -1;
+                for (let i = 0; i < buf.length - 1; i++) if (buf[i] === 0xFF && buf[i + 1] === 0xD8) { a = i; break; }
+                if (a < 0) { buf = buf.slice(-1); break; }
+                for (let i = a + 2; i < buf.length - 1; i++) if (buf[i] === 0xFF && buf[i + 1] === 0xD9) { b = i + 2; break; }
+                if (b < 0) { buf = buf.slice(a); break; }
+                cvs.feed(new Blob([buf.slice(a, b)], { type: 'image/jpeg' })); buf = buf.slice(b);
+              }
+              if (buf.length > 12e6) buf = new Uint8Array(0);
+            }
+          } catch (e) { if (!job.on) break; camNote({ url: found.url, error: 'mjpeg ' + (e.message || e) }); }
+          if (job.on) await new Promise((q) => setTimeout(q, 1000));
+        }
+      })();
+      const stopFetch = () => { job.on = false; try { job.ctl.abort(); } catch (e) { /* noop */ } };
+      cam.job = { set on(v) { if (!v) stopFetch(); }, get on() { return job.on; } };
+    } else if (found.kind === 'ws') {
+      cam.ws = found.ws; cam.ws.binaryType = 'blob';
+      cam.ws.onmessage = (e) => { if (e.data instanceof Blob) cvs.feed(e.data.slice(0, e.data.size, 'image/jpeg')); };
+      cam.ws.onclose = () => { if (src.video === cvs) U.toast('La cámara cerró la conexión.', 'err'); };
+    } else {
+      const job = cam.job = { on: true };
+      const url = found.url;
+      (async () => {
+        while (job.on) {
+          const t0 = performance.now(), r = await camGet(url, 2500);
+          if (!job.on) break;
+          if (r && r.jpeg && r.data) cvs.feed(b64Blob(r.data)); else await new Promise((q) => setTimeout(q, 400));
+          if (cam.log.length > 150) cam.log.splice(0, 100);
+          await new Promise((q) => setTimeout(q, Math.max(0, 80 - (performance.now() - t0))));
+        }
+      })();
+    }
+    src.native = { stop: async () => { if (cam.job) cam.job.on = false; cam.job = null; if (cam.sub) { try { cam.sub.remove(); } catch (e) { /* noop */ } cam.sub = null; } if (cam.ws) { try { cam.ws.close(); } catch (e) { /* noop */ } cam.ws = null; } if (CS()) await CS().stop().catch(() => {}); } };
+    src.video = cvs; src.name = 'Moticam';
+    try { localStorage.setItem('pv2.wifiUrl', base); } catch (e) { /* noop */ }
+    $('#wifiUrl').value = base.replace(/^http:\/\//, '');
+    $('#btnCamStop').disabled = false; tracker.reset(); sweep.reset(); renderSweep();
+    const kindTxt = { mjpeg: 'video MJPEG directo', snap: 'imágenes JPEG', ws: 'video por WebSocket' }[found.kind];
+    $('#liveHint').textContent = `Cámara conectada en ${base} · ${kindTxt}${cam.snap ? ' · «Analizar este cuadro» usa la foto completa de la cámara' : ''} · escala: ${Cfg.profile().name}`;
+    U.toast('Cámara conectada: ' + kindTxt, 'ok');
+  }
+  // Foto completa de la cámara (p. ej. 2592×1520 en Moticam X3) para el dictamen
+  async function camStill() {
+    if (!cam.snap) return null;
+    const r = await camGet(cam.snap, 6000);
+    return r && r.jpeg && r.data ? b64Blob(r.data) : null;
+  }
+  async function camReport() {
+    if (!cam.log.length) { U.toast('Primero pulse «Conectar» para que la app pruebe la cámara.', 'info'); return; }
+    const rep = { app: 'pv-c175', version: APP_VERSION, at: new Date().toISOString(), native: Env.native, ua: navigator.userAgent, base: cam.base, kind: cam.kind, url: cam.url, snap: cam.snap, log: cam.log };
+    U.download(`informe-camara-${U.stamp()}.json`, new Blob([JSON.stringify(rep, null, 1)], { type: 'application/json' }));
   }
   async function startVideo(file) {
     stopSource(); notice(null);
@@ -2776,7 +2916,7 @@ const Live = (() => {
     const [a, b] = tool.pts; tool.pts = [];
     if (tool.kind === 'measure') { tool.measures.push([a, b]); return; }
     const px = Math.hypot(b[0] - a[0], b[1] - a[1]) / geom.k;
-    Calib.open(px, { refW: geom.vw, name: `${{ cam: 'Cámara', screen: 'Pantalla', video: 'Video', wifi: 'Cámara WiFi' }[mode]} ${geom.vw}×${geom.vh} · ${U.today()}`,
+    Calib.open(px, { refW: geom.vw, name: `${{ cam: 'Cámara', screen: 'Pantalla', video: 'Video', wifi: 'Moticam' }[mode]} ${geom.vw}×${geom.vh} · ${U.today()}`,
       onDone: (prof) => { setTool(''); freeze(false); tracker.reset(); sweep.reset(); renderSweep(); $('#liveHint').textContent = `Escala activa: ${prof.name} (${prof.umPerPx.toFixed(4)} µm/px).`; } });
   }
   function drawTool() {
@@ -2834,7 +2974,7 @@ const Live = (() => {
       drawBoxes(); drawTool();
     } else {
       ctx.fillStyle = '#9AA6B3'; ctx.font = '600 16px system-ui'; ctx.textAlign = 'center';
-      ctx.fillText({ cam: 'Elija la cámara y pulse «Iniciar cámara»', screen: 'Pulse «Compartir pantalla o ventana»', video: 'Abra un video del estereoscopio', wifi: 'Escriba la dirección de la cámara WiFi y pulse «Conectar»' }[mode], W / 2, H / 2);
+      ctx.fillText({ cam: 'Elija la cámara y pulse «Iniciar cámara»', screen: 'Pulse «Compartir pantalla o ventana»', video: 'Abra un video del estereoscopio', wifi: 'Conecte la tablet a la WiFi de la cámara y pulse «Conectar»' }[mode], W / 2, H / 2);
       ctx.textAlign = 'left';
     }
     hud();
@@ -2918,6 +3058,11 @@ const Live = (() => {
   async function capture() {
     const v = src.video;
     if (!v || !v.videoWidth) { U.toast('No hay video activo', 'err'); return; }
+    if (mode === 'wifi' && cam.snap) {
+      U.toast('Pidiendo la foto completa a la cámara…', 'info', 2500);
+      const still = await camStill().catch(() => null);
+      if (still) { App.go('an'); await An.load(still, `moticam_${U.stamp()}.jpg`, 'cámara wifi'); return; }
+    }
     const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0);
     if (mode === 'video') v.pause();
     App.go('an');
@@ -2929,7 +3074,7 @@ const Live = (() => {
     $$('#liveMode button').forEach((x) => x.classList.toggle('on', x.dataset.mode === m));
     $('#camBar').hidden = m !== 'cam'; $('#screenBar').hidden = m !== 'screen'; $('#vidBar').hidden = m !== 'video'; $('#wifiBar').hidden = m !== 'wifi';
     notice(null);
-    $('#liveHint').textContent = { cam: 'En planta: la capturadora HDMI-USB conectada a la salida del estereoscopio aparece en la lista. En celular o tablet: cámara trasera apuntando al ocular o al monitor.', screen: Env.native ? 'Abra la app de la cámara del estereoscopio (por ejemplo MotiConnect) en pantalla dividida y pulse «Compartir pantalla». Luego «Calibrar en vivo».' : 'Comparta la ventana donde está la foto del parche. Luego «Calibrar en vivo» sobre una distancia conocida.', video: 'Reproduzca un video grabado del estereoscopio.', wifi: 'Experimental: conecte la tablet a la red WiFi de la cámara del estereoscopio y escriba la dirección de su imagen (snapshot), o pulse «Buscar». Si la cámara solo funciona con su propia app, use «Pantalla».' }[m];
+    $('#liveHint').textContent = { cam: 'En planta: la capturadora HDMI-USB conectada a la salida del estereoscopio aparece en la lista. En celular o tablet: cámara trasera apuntando al ocular o al monitor.', screen: Env.native ? 'Abra la app de la cámara del estereoscopio (por ejemplo MotiConnect) en pantalla dividida y pulse «Compartir pantalla». Luego «Calibrar en vivo».' : 'Comparta la ventana donde está la foto del parche. Luego «Calibrar en vivo» sobre una distancia conocida.', video: 'Reproduzca un video grabado del estereoscopio.', wifi: 'Conexión directa a la cámara, como MotiConnect pero con la calidad original: conecte la tablet a la WiFi de la cámara (MoticamX3_…, clave de fábrica 12345678), cierre MotiConnect y pulse «Conectar». Deje la dirección vacía para buscarla sola.' }[m];
     if (m === 'screen' && !Env.canScreen) startScreen();
     if (m === 'cam' && (!Env.canCamera || (Env.inIframe && !Env.policyAllows('camera')))) explainBlocked('cámara');
     tracker.reset(); sweep.reset(); fieldV = null; renderSweep();
@@ -2937,7 +3082,7 @@ const Live = (() => {
   function bind() {
     $$('#liveMode button').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
     $('#btnCamStart').onclick = startCam; $('#btnScreen').onclick = startScreen;
-    $('#btnWifi').onclick = () => startWifi(); $('#btnWifiScan').onclick = scanWifi;
+    $('#btnWifi').onclick = () => startWifi(); $('#btnWifiScan').onclick = camReport;
     try { $('#wifiUrl').value = localStorage.getItem('pv2.wifiUrl') || ''; } catch (e) { /* noop */ }
     $('#btnCamStop').onclick = () => { stopSource(); $('#liveHint').textContent = 'Fuente detenida.'; };
     $('#btnVidOpen').onclick = () => $('#vidIn').click();
@@ -3170,6 +3315,60 @@ const Learn = (() => {
     else render();
   }
 
+  /* ---------------- sincronización entre sitios (cuando hay internet) ----------------
+   * Servidor gratuito: Google Apps Script + una hoja de cálculo (apps-script/Code.gs).
+   * Se envían SOLO ejemplos confirmados por personas (nunca los automáticos) y se reciben los de
+   * los demás sitios. Sin señal no pasa nada: se reintenta cuando vuelve internet. */
+  let syncing = false, syncTimer = 0;
+  const syncCfg = () => Object.assign({ url: '', key: '', cursor: 0, at: '' }, CFG.sync || {});
+  function syncText(t) { const el = $('#mlSyncTxt'); if (el) el.textContent = t; }
+  async function syncCall(body) {
+    const c = syncCfg();
+    const r = await fetch(c.url, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ key: c.key, site: CFG.site || '', app: APP_VERSION }, body)) });
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || 'respuesta inválida');
+    return j;
+  }
+  async function sync(manual) {
+    const c = syncCfg();
+    if (!c.url) { if (manual) syncText('Sincronización: sin configurar (Ajustes → Sincronizar el aprendizaje).'); return; }
+    if (syncing) return;
+    if (!navigator.onLine) { syncText('Sin internet: se sincronizará cuando vuelva la señal.'); return; }
+    syncing = true; syncText('Sincronizando…');
+    try {
+      // 1) enviar lo propio confirmado por personas
+      const mine = ex.filter((e) => !e.auto && !e.remote && !e.synced && e.label !== 'indet');
+      let sent = 0;
+      for (let i = 0; i < mine.length; i += 40) {
+        const batch = mine.slice(i, i + 40);
+        await syncCall({ action: 'push', examples: batch.map((e) => ({ id: e.id, label: e.label, f: e.f, thumb: e.thumb, src: e.src, site: e.site || CFG.site || '', at: e.at })) });
+        for (const e of batch) { e.synced = true; await DB.put(e); }
+        sent += batch.length;
+      }
+      // 2) recibir lo de los demás sitios
+      let cursor = c.cursor || 0, got = 0, more = true;
+      const have = new Set(ex.map((e) => e.id));
+      while (more) {
+        const j = await syncCall({ action: 'pull', since: cursor });
+        for (const e of j.examples || []) {
+          if (!e || !e.id || have.has(e.id) || !PV.LABELS[e.label] || !e.f) continue;
+          const x = { id: e.id, key: 'remoto|' + e.id, label: e.label, f: e.f, thumb: e.thumb || '', src: e.src || 'remoto', site: e.site || '', at: e.at || '', remote: true, synced: true };
+          ex.push(x); have.add(x.id); await DB.put(x); got++;
+        }
+        cursor = j.next || cursor; more = !!j.more;
+      }
+      CFG.sync = Object.assign({}, CFG.sync, { cursor, at: new Date().toISOString() }); Cfg.save();
+      syncText(`Sincronizado ${new Date().toLocaleString('es-PE')}: ${sent} enviados, ${got} recibidos de otros sitios.`);
+      if (got) retrain();
+      if (manual) U.toast(`Sincronización lista: ${sent} enviados, ${got} recibidos.`, 'ok');
+    } catch (err) {
+      syncText('No se pudo sincronizar: ' + (err.message || err) + '. Se reintentará con internet.');
+      if (manual) U.toast('No se pudo sincronizar: ' + U.esc(err.message || err), 'err');
+    } finally { syncing = false; }
+  }
+  // tras etiquetar, sincroniza al minuto (agrupa varias etiquetas en un solo envío)
+  const syncSoon = () => { clearTimeout(syncTimer); syncTimer = setTimeout(() => sync(false), 60000); };
+
   /* ---------------- modelo y validación ---------------- */
   let rt;
   function retrain() {
@@ -3179,6 +3378,7 @@ const Learn = (() => {
       const usable = ex.filter((e) => e.label !== 'indet' && PV.LABELS[e.label]);
       const H = usable.filter((e) => !e.auto);
       model = usable.length >= 2 ? PV.mlFit(usable, CFG.ml.k) : null;
+      if (ex.some((e) => !e.auto && !e.remote && !e.synced)) syncSoon();
       version++;
       val = validate(usable);
       const sources = new Set(H.map((e) => e.src)).size;
@@ -3266,7 +3466,7 @@ const Learn = (() => {
     // galería
     $('#galFilter').innerHTML = '<option value="">Todas las clases</option>' + cls.map(([k, L]) => `<option value="${k}" ${filter === k ? 'selected' : ''}>${U.esc(L.name)}</option>`).join('');
     const list = ex.filter((e) => !filter || e.label === filter).slice(-400).reverse();
-    $('#gal').innerHTML = list.map((e) => `<figure data-id="${e.id}" class="${sel.has(e.id) ? 'sel' : ''}" title="${U.esc(e.src)}${e.site ? ' · ' + U.esc(e.site) : ''}"><img src="${e.thumb}" alt="">${e.auto ? '<span class="auto">auto</span>' : ''}<figcaption style="border-top:3px solid ${COLORS[PV.LABELS[e.label].group]}">${U.esc(PV.LABELS[e.label].name)}</figcaption></figure>`).join('') || '<p class="hint">Todavía no hay ejemplos. En «Analizar foto», elija una partícula y toque lo que realmente es.</p>';
+    $('#gal').innerHTML = list.map((e) => `<figure data-id="${e.id}" class="${sel.has(e.id) ? 'sel' : ''}" title="${U.esc(e.src)}${e.site ? ' · ' + U.esc(e.site) : ''}"><img src="${e.thumb}" alt="">${e.auto ? '<span class="auto">auto</span>' : e.remote ? '<span class="auto" style="background:rgba(255,205,17,.92);color:#1A1400">' + U.esc((e.site || 'otro sitio').slice(0, 14)) + '</span>' : ''}<figcaption style="border-top:3px solid ${COLORS[PV.LABELS[e.label].group]}">${U.esc(PV.LABELS[e.label].name)}</figcaption></figure>`).join('') || '<p class="hint">Todavía no hay ejemplos. En «Analizar foto», elija una partícula y toque lo que realmente es.</p>';
     $('#galSelBar').hidden = !sel.size; $('#galSelTxt').textContent = `${sel.size} seleccionado(s)`;
     $('#galRelabel').innerHTML = cls.map(([k, L]) => `<option value="${k}">${U.esc(L.name)}</option>`).join('');
     $('#mlAuto').checked = !!CFG.ml.auto; $('#mlQueue').checked = !!CFG.ml.queue;
@@ -3301,6 +3501,9 @@ const Learn = (() => {
     el.innerHTML = rows.map(([f, v]) => `<span>${U.esc(IMP_NAMES[f] || f)}</span><span class="t"><i style="width:${(v / mx * 100).toFixed(0)}%"></i></span><span class="num" style="text-align:right">${U.fmt(v * 100)} %</span>`).join('');
   }
   function bind() {
+    $('#mlSync').onclick = () => sync(true);
+    window.addEventListener('online', () => setTimeout(() => sync(false), 3000));
+    if (syncCfg().at) syncText('Última sincronización: ' + new Date(syncCfg().at).toLocaleString('es-PE') + '.');
     $('#mlAuto').addEventListener('change', () => { CFG.ml.auto = $('#mlAuto').checked; Cfg.save(); });
     $('#mlQueue').addEventListener('change', () => { CFG.ml.queue = $('#mlQueue').checked; Cfg.save(); });
     $('#mlPurgeAuto').onclick = async () => {
@@ -3323,7 +3526,7 @@ const Learn = (() => {
     $('#galFilter').addEventListener('change', () => { filter = $('#galFilter').value; render(); });
     $('#gal').addEventListener('click', (e) => { const f = e.target.closest('figure'); if (!f) return; const id = f.dataset.id; sel.has(id) ? sel.delete(id) : sel.add(id); render(); });
     $('#galDel').onclick = async () => { if (!(await U.confirm(`¿Eliminar ${sel.size} ejemplo(s)?`, 'Eliminar', true))) return; for (const id of sel) await DB.del(id); ex = ex.filter((e) => !sel.has(e.id)); sel.clear(); retrain(); };
-    $('#galRelabelBtn').onclick = async () => { const l = $('#galRelabel').value; for (const e of ex) if (sel.has(e.id)) { e.label = l; await DB.put(e); } sel.clear(); retrain(); U.toast('Clase actualizada', 'ok'); };
+    $('#galRelabelBtn').onclick = async () => { const l = $('#galRelabel').value; for (const e of ex) if (sel.has(e.id)) { e.label = l; e.synced = false; e.remote = false; await DB.put(e); } sel.clear(); retrain(); U.toast('Clase actualizada', 'ok'); };
     $('#mlExport').onclick = () => U.download(`ejemplos_particulas_${U.stamp()}.json`, new Blob([JSON.stringify({ app: 'pv-c175', version: APP_VERSION, site: CFG.site || '', features: PV.FEAT_KEYS, examples: ex }, null, 1)], { type: 'application/json' }));
     $('#mlImport').onclick = () => $('#mlImportIn').click();
     $('#mlImportIn').addEventListener('change', async (e) => {
@@ -3341,7 +3544,7 @@ const Learn = (() => {
       U.toast('App descargada con los ejemplos incluidos. Ábrala en otro equipo y los cargará sola.', 'ok', 6000);
     };
   }
-  return { load, bind, render, addFromParticle, addMany, removeFor, activeModel, effectiveMode, suggest, observeLive, observePhoto, renderQueueBadge, get examples() { return ex; }, get status() { return status; }, get version() { return version; } };
+  return { load, bind, render, addFromParticle, addMany, removeFor, activeModel, effectiveMode, suggest, observeLive, observePhoto, renderQueueBadge, sync, get examples() { return ex; }, get status() { return status; }, get version() { return version; } };
 })();
 
 /* =====================================================================
@@ -3371,7 +3574,7 @@ const App = (() => {
   }
   function openSettings() {
     renderProfiles();
-    $('#sMinUm').value = CFG.minDetectUm; $('#sSite').value = CFG.site || ''; $('#sMaxPx').value = String(CFG.maxPx); $('#sRed').checked = CFG.removeRed;
+    $('#sMinUm').value = CFG.minDetectUm; $('#sSite').value = CFG.site || ''; $('#sSyncUrl').value = (CFG.sync || {}).url || ''; $('#sSyncKey').value = (CFG.sync || {}).key || ''; $('#sMaxPx').value = String(CFG.maxPx); $('#sRed').checked = CFG.removeRed;
     U.modal('mdlSettings');
   }
   function onScaleChanged() { renderProfiles(); An.updateScale(); if (An.state.img) An.analyze(); Live.onScale(); }
@@ -3447,6 +3650,7 @@ const App = (() => {
     };
     $('#btnSaveSettings').onclick = () => {
       CFG.minDetectUm = Math.max(5, Number($('#sMinUm').value) || 25); CFG.maxPx = Number($('#sMaxPx').value) || 1600; CFG.removeRed = $('#sRed').checked; CFG.site = $('#sSite').value.trim().slice(0, 60);
+      CFG.sync = Object.assign({}, CFG.sync, { url: $('#sSyncUrl').value.trim(), key: $('#sSyncKey').value.trim() }); setTimeout(() => Learn.sync(true), 300);
       Cfg.save(); U.modal('mdlSettings', false); U.toast('Ajustes guardados', 'ok'); if (An.state.img) An.analyze();
     };
     window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; });
@@ -3458,6 +3662,7 @@ const App = (() => {
     }
     An.renderSide();
     await Learn.load();
+    setTimeout(() => Learn.sync(false), 4000);
     netStatus();
     const h = (location.hash || '').slice(1); if (['an', 'lv', 'cr', 'ml'].includes(h)) go(h);
   }

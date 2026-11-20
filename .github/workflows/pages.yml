@@ -1,0 +1,40 @@
+name: Publicar version web
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Descargar el proyecto
+        uses: actions/checkout@v5
+      - name: Armar el sitio (app + modo sin internet)
+        run: |
+          mkdir -p _site
+          cp index.html _site/index.html
+          cp web/manifest.webmanifest _site/
+          sed "s/__VERSION__/$(date +%Y%m%d%H%M%S)/" web/sw.js > _site/sw.js
+          convert icon-only.png -resize 192x192 _site/icon-192.png || cp icon-only.png _site/icon-192.png
+          convert icon-only.png -resize 512x512 _site/icon-512.png || cp icon-only.png _site/icon-512.png
+          touch _site/.nojekyll
+          ls -la _site
+      - name: Preparar Pages
+        uses: actions/configure-pages@v5
+      - name: Subir el sitio
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Publicar
+        id: deploy
+        uses: actions/deploy-pages@v4

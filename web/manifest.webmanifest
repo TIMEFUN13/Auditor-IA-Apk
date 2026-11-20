@@ -1,0 +1,17 @@
+{
+  "id": "./",
+  "name": "Identificador de partículas C175",
+  "short_name": "Partículas C175",
+  "description": "Detecta, mide y clasifica partículas en parches Millipore de monoblocks C175 (SEHS0772, CICAL012). Funciona sin internet.",
+  "lang": "es",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#13171C",
+  "theme_color": "#13171C",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
