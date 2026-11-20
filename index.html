@@ -269,6 +269,20 @@ td.n{text-align:right;font:600 14px var(--display)}
 .gal figure img{width:100%;height:100%;object-fit:cover;display:block}
 .gal figure figcaption{position:absolute;left:0;right:0;bottom:0;padding:2px 5px;font-size:10.5px;background:rgba(0,0,0,.7);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gal figure.sel{border-color:var(--cat)}
+.gal figure .auto{position:absolute;top:3px;left:3px;font:700 9.5px/1 var(--display,system-ui);padding:3px 5px;border-radius:5px;background:rgba(62,224,255,.92);color:#04212A}
+.qbadge{display:inline-grid;place-items:center;min-width:19px;height:19px;padding:0 5px;margin-left:6px;border-radius:10px;background:var(--abr);color:#fff;font:700 11px/1 system-ui}
+.qbadge[hidden]{display:none}
+.queue{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;max-height:520px;overflow:auto;padding:2px}
+.qcard{border:2px solid var(--line);border-radius:12px;background:var(--plate2);overflow:hidden;cursor:pointer;display:flex;flex-direction:column}
+.qcard.sel{border-color:var(--cat)}
+.qcard img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#000;image-rendering:pixelated}
+.qcard .qi{padding:6px 8px;font-size:12px;line-height:1.35}
+.qcard .qi b{display:block;font-size:12.5px}
+.qlabels{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.qlabels button{min-height:44px;padding:6px 12px;border-radius:10px;border:1px solid var(--line);background:var(--plate2);color:inherit;font:600 13.5px system-ui;display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+.qlabels button i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.imp{display:grid;grid-template-columns:150px 1fr 44px;gap:4px 8px;align-items:center;font-size:12.5px}
+.imp .t{height:8px;border-radius:4px;background:var(--plate2);overflow:hidden}.imp .t i{display:block;height:100%;background:var(--cat)}
 .conf{border-collapse:separate;border-spacing:3px}
 .conf td,.conf th{text-align:center;border:0;padding:6px;border-radius:6px;font:600 13px var(--display)}
 .state{display:inline-flex;align-items:center;gap:8px;font:600 15px var(--display)}
@@ -338,7 +352,7 @@ td.n{text-align:right;font:600 14px var(--display)}
       <button role="tab" aria-selected="true" data-view="an"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 9"/></svg>Analizar<br>foto</button>
       <button role="tab" aria-selected="false" data-view="lv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10l5-3v10l-5-3z"/><rect x="3" y="6" width="12" height="12" rx="2.5"/><circle cx="7" cy="10" r="1" fill="currentColor"/></svg>En vivo</button>
       <button role="tab" aria-selected="false" data-view="cr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M4 12h7M4 18h10"/><circle cx="18" cy="6" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Criterios</button>
-      <button role="tab" aria-selected="false" data-view="ml"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="7" r="2.2"/><circle cx="6" cy="17" r="2.2"/><circle cx="18" cy="12" r="2.2"/><path d="M8 8l8 3M8 16l8-3M6 9.5v5"/></svg>Aprendizaje</button>
+      <button role="tab" aria-selected="false" data-view="ml"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="7" r="2.2"/><circle cx="6" cy="17" r="2.2"/><circle cx="18" cy="12" r="2.2"/><path d="M8 8l8 3M8 16l8-3M6 9.5v5"/></svg>Aprendizaje<span class="qbadge" id="qBadge" hidden>0</span></button>
     </nav>
     <div class="sp"></div>
     <button class="railbtn" id="btnTheme" title="Cambiar tema claro/oscuro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg></button>
@@ -501,6 +515,7 @@ td.n{text-align:right;font:600 14px var(--display)}
         <div class="seg" id="liveMode">
           <button data-mode="cam" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Cámara</button>
           <button data-mode="screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>Pantalla</button>
+          <button data-mode="wifi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/></svg>Cámara WiFi</button>
           <button data-mode="video"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/></svg>Video</button>
         </div>
         <div class="row" id="camBar">
@@ -509,6 +524,11 @@ td.n{text-align:right;font:600 14px var(--display)}
           <button class="btn pri" id="btnCamStart">Iniciar cámara</button>
         </div>
         <div class="row" id="screenBar" hidden><button class="btn pri" id="btnScreen">Compartir pantalla o ventana</button></div>
+        <div class="row" id="wifiBar" hidden>
+          <input type="url" id="wifiUrl" placeholder="http://192.168.1.1/snapshot.jpg" style="width:auto;min-width:260px" inputmode="url" autocomplete="off">
+          <button class="btn pri" id="btnWifi">Conectar</button>
+          <button class="btn" id="btnWifiScan">Buscar</button>
+        </div>
         <div class="row" id="vidBar" hidden>
           <input type="file" id="vidIn" accept="video/*" hidden>
           <button class="btn pri" id="btnVidOpen">Abrir video</button>
@@ -624,7 +644,7 @@ td.n{text-align:right;font:600 14px var(--display)}
       <div class="top">
         <div>
           <h1>Aprendizaje con sus propias muestras</h1>
-          <p>El modelo compara cada partícula nueva con las que usted ya identificó (vecinos más cercanos, k-NN). Solo influye en el dictamen cuando demuestra, con fotos que no vio, que acierta.</p>
+          <p>Un bosque aleatorio y un comparador de vecinos (k-NN) aprenden de las partículas que usted identifica y de lo que la app confirma sola en video. Todo ocurre en la tablet, sin internet. Solo influye en el dictamen cuando demuestra, con fotos que no vio, que acierta.</p>
         </div>
       </div>
       <div class="cols">
@@ -640,6 +660,22 @@ td.n{text-align:right;font:600 14px var(--display)}
           </div>
           <p class="hint" id="mlModeHint" style="margin:8px 0 0"></p>
           <div class="row" style="margin-top:10px"><label class="chk">Vecinos comparados (k) <input type="range" id="mlK" min="1" max="15" step="1" value="5"> <b class="num" id="mlKTxt">5</b></label></div>
+        </div>
+        <div class="panel c5">
+          <h3>Autoaprendizaje</h3>
+          <label class="chk"><input type="checkbox" id="mlAuto"> Aprender solo en video (pseudo-etiquetas)</label>
+          <p class="hint" style="margin:4px 0 10px">Con el modelo ya validado, cuando una partícula se sigue ≥ 8 cuadros y reglas y aprendizaje coinciden en casi todos, se guarda como ejemplo automático (peso 35 %, marcado «auto»). Nunca más automáticos que la mitad de los suyos por clase, y nunca se usan para validar.</p>
+          <label class="chk"><input type="checkbox" id="mlQueue"> Juntar partículas dudosas para revisar</label>
+          <p class="hint" style="margin:4px 0 10px">La app guarda las que más le enseñarían: discrepancias, dudas entre dos clases y lo que no se parece a nada aprendido (cámara o luz nueva).</p>
+          <div class="row"><button class="btn sm" id="mlPurgeAuto">Quitar ejemplos automáticos</button></div>
+        </div>
+        <div class="panel c12" id="qPanel">
+          <h3>Cola de revisión <span class="qbadge" id="qBadge2" hidden>0</span><span class="sp"></span><button class="btn sm" id="qClear">Vaciar cola</button></h3>
+          <p class="hint" style="margin-top:-4px">Toque una tarjeta y luego lo que realmente es. Cada respuesta es el ejemplo que más mejora el modelo (aprendizaje activo). Si no está seguro, «Descartar».</p>
+          <div class="queue" id="queue"></div>
+          <div id="qAct" hidden>
+            <div class="qlabels" id="qLabels"></div>
+          </div>
         </div>
         <div class="panel c5">
           <h3>Ejemplos por clase</h3>
@@ -660,6 +696,9 @@ td.n{text-align:right;font:600 14px var(--display)}
           <h3>Validación por foto</h3>
           <p class="hint" style="margin-top:-4px">Cada foto se deja fuera del entrenamiento y se predice con el resto. Es la prueba honesta: mide si reconoce partículas en fotos nuevas.</p>
           <div id="mlConf"></div>
+          <h3 style="margin-top:16px">Qué mira el modelo</h3>
+          <p class="hint" style="margin-top:-4px">Peso de cada variable en las decisiones del bosque aleatorio.</p>
+          <div class="imp" id="mlImp"></div>
         </div>
         <div class="panel c7">
           <h3>Cómo alimentarlo bien</h3>
@@ -717,6 +756,7 @@ td.n{text-align:right;font:600 14px var(--display)}
     <div class="field grow"><label>Resolución máxima de análisis</label><select id="sMaxPx"><option>1200</option><option>1600</option><option>2000</option><option>2600</option></select></div>
   </div>
   <label class="chk"><input type="checkbox" id="sRed" checked> Ignorar trazos rojos y recuadros azules de medición</label>
+  <div class="field" style="margin-top:10px"><label for="sSite">Sitio y equipo (se guarda en cada ejemplo, para combinar bibliotecas de varios lugares)</label><input type="text" id="sSite" placeholder="Ej.: Taller Lima · estereoscopio 2"></div>
   <div class="row" style="margin-top:14px"><button class="btn pri" id="btnSaveSettings">Guardar</button></div>
 </div></div>
 
@@ -1142,6 +1182,13 @@ function PVFactory() {
     grad:     { name: 'Nitidez interna', unit: '%', pct: true, desc: 'Cambio de brillo entre píxeles vecinos dentro de la partícula: facetas y aristas dan valores altos; polvos y pintura, bajos.' },
     chromaStd:{ name: 'Variación de color', unit: '%', pct: true, desc: 'Cuánto cambia el color dentro de la partícula (óxido moteado alto; pintura uniforme bajo).' },
     lenThick: { name: 'Largo ÷ espesor', unit: '×', fmt: 1, desc: 'Esbeltez real, válida también para hilos curvos.' },
+    wbHue:    { name: 'Tono corregido', unit: '°', fmt: 0, desc: 'Tono después de neutralizar el color de la membrana vecina (balance de blancos): no cambia con la cámara ni con la luz de cada equipo.' },
+    wbSat:    { name: 'Saturación corregida', unit: '%', pct: true, desc: 'Saturación con el mismo balance de blancos: un tinte de la iluminación ya no se confunde con color propio.' },
+    maxRel:   { name: 'Destello máximo', unit: '%', pct: true, desc: 'Píxel más brillante frente al fondo. Criterio de «brillo metálico» de VDA 19 / ISO 16232 (gris máx. ≥ 240).' },
+    edgeSharp:{ name: 'Nitidez del contorno', unit: '%', pct: true, desc: 'Salto de brillo en el borde: metales y cristales tienen aristas netas; polvos, pinturas y fibras, difusas.' },
+    circ:     { name: 'Circularidad', unit: '%', pct: true, desc: '4π·área ÷ perímetro² (100 % = círculo). Esferas de desgaste altas; virutas y fibras bajas.' },
+    convex:   { name: 'Convexidad', unit: '%', pct: true, desc: 'Perímetro de la envolvente ÷ perímetro real: contornos dentados o rugosos dan valores bajos.' },
+    extent:   { name: 'Relleno de la caja', unit: '%', pct: true, desc: 'Área ÷ área del rectángulo que la contiene.' },
   };
   // Reglas ordenadas: gana la primera que cumple TODAS sus condiciones.
   // c = condiciones { f: variable, op: '>=' | '<=' | '<' | '>' | 'in' (tono, rango circular), v / a,b }
@@ -1210,41 +1257,132 @@ function PVFactory() {
     return { label: r.label, group: L.group, tipo: L.name, conf, why: r.why, ruleId: r.id };
   }
 
-  /* --------------------- aprendizaje: k-NN sobre variables ópticas --------------------- */
-  // Solo variables independientes de la escala (el modelo sirve con cualquier aumento).
-  const ML_FEATS = ['chromaX', 'chromaY', 'sat', 'relL', 'specSqrt', 'stdRel', 'q10', 'q90', 'grad', 'chromaStd'];
+  /* ===================== aprendizaje: ensamble Random Forest + k-NN =====================
+   * Por qué este diseño (literatura de limpieza técnica VDA 19 / ISO 16232 y de ferrografía):
+   *  - Con pocos cientos de ejemplos tabulares, los bosques aleatorios y k-NN superan a las redes
+   *    profundas y entrenan en milisegundos en la tablet, sin internet ni GPU.
+   *  - El bosque combina color, textura y FORMA (circularidad, convexidad, elongación…) y dice
+   *    qué variables pesan; k-NN aporta la medida de «parecido a algo ya visto» (fuera de dominio).
+   *  - Sensible al costo: confundir una abrasiva con blanda es el error caro → las abrasivas pesan
+   *    más al entrenar y basta una probabilidad moderada de abrasiva para mandar a sondear.
+   *  - Cada ejemplo tiene un peso: los aprendidos solos (autoaprendizaje) pesan menos que los
+   *    confirmados por una persona.
+   * Solo variables independientes de la escala: el modelo sirve con cualquier aumento. */
+  const ML_FEATS = ['chromaX', 'chromaY', 'sat', 'relL', 'specSqrt', 'stdRel', 'q10', 'q90', 'grad', 'chromaStd',
+    'wbX', 'wbY', 'maxRel', 'edgeSharp', 'logElong', 'solidity', 'circ', 'convex', 'extent', 'darkFrac'];
+  const KNN_IDX = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]; // k-NN: firma óptica (la forma la decide el bosque)
+  // variables que se guardan de cada ejemplo
+  const FEAT_KEYS = ['hue', 'sat', 'relL', 'spec', 'stdRel', 'darkFrac', 'elong', 'solidity', 'thickUm', 'lenThick', 'widthUm', 'lengthUm', 'coreFrac', 'q10', 'q90', 'grad', 'chromaStd',
+    'wbHue', 'wbSat', 'maxRel', 'edgeSharp', 'circ', 'convex', 'extent'];
+  const num = (v) => (v == null || v === '' || !isFinite(+v) ? NaN : +v);
   function mlVector(p) {
-    const h = (p.hue || 0) * Math.PI / 180, s = p.sat || 0;
-    return [s * Math.cos(h), s * Math.sin(h), s, p.relL || 0, Math.sqrt(Math.max(0, p.spec || 0)), p.stdRel || 0, p.q10 || 0, p.q90 || 0, p.grad || 0, p.chromaStd || 0];
+    const h = num(p.hue) * Math.PI / 180, s = num(p.sat), wh = num(p.wbHue) * Math.PI / 180, ws = num(p.wbSat), el = num(p.elong);
+    return [s * Math.cos(h), s * Math.sin(h), s, num(p.relL), Math.sqrt(Math.max(0, num(p.spec))), num(p.stdRel), num(p.q10), num(p.q90), num(p.grad), num(p.chromaStd),
+      ws * Math.cos(wh), ws * Math.sin(wh), num(p.maxRel), num(p.edgeSharp), el > 0 ? Math.log(el) : NaN, num(p.solidity), num(p.circ), num(p.convex), num(p.extent), num(p.darkFrac)];
   }
-  // model = { X: [[...]], y: ['metal',...], mu, sd, k, medNN }
-  function mlFit(examples, k) {
-    const X = examples.map((e) => mlVector(e.f)), y = examples.map((e) => e.label), n = X.length, d = ML_FEATS.length;
+  // generador pseudoaleatorio con semilla (resultados reproducibles en todas las tablets)
+  function rng(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+  const groupOf = (l) => (LABELS[l] || LABELS.indet).group;
+
+  // Árbol CART (Gini ponderado), guardado en arreglos planos (se puede clonar al worker).
+  function growTree(X, yi, wt, idx, nC, d, opt, R, imp) {
+    const T = { f: [], t: [], l: [], r: [], p: [] };
+    const mtry = Math.max(1, Math.round(Math.sqrt(d) * 1.3));
+    const node = (rows, depth) => {
+      const id = T.f.length; T.f.push(-1); T.t.push(0); T.l.push(-1); T.r.push(-1); T.p.push(null);
+      const dist = new Array(nC).fill(0); let W = 0;
+      for (const i of rows) { dist[yi[i]] += wt[i]; W += wt[i]; }
+      let pure = 0; for (const v of dist) if (v > 0) pure++;
+      const leaf = () => { T.p[id] = dist.map((v) => +(v / (W || 1)).toFixed(4)); return id; };
+      if (depth >= opt.maxDepth || rows.length < 2 * opt.minLeaf || pure <= 1) return leaf();
+      let gini0 = 1; for (const v of dist) gini0 -= (v / W) ** 2;
+      let best = { gain: 1e-7, f: -1, t: 0 };
+      const feats = []; while (feats.length < mtry) { const f = (R() * d) | 0; if (!feats.includes(f)) feats.push(f); }
+      for (const f of feats) {
+        const ord = rows.filter((i) => !isNaN(X[i][f])).sort((a, b) => X[a][f] - X[b][f]);
+        if (ord.length < 2 * opt.minLeaf) continue;
+        const L = new Array(nC).fill(0), Rr = new Array(nC).fill(0); let WL = 0, WR = 0;
+        for (const i of ord) { Rr[yi[i]] += wt[i]; WR += wt[i]; }
+        for (let k = 0; k < ord.length - 1; k++) {
+          const i = ord[k], c = yi[i]; L[c] += wt[i]; Rr[c] -= wt[i]; WL += wt[i]; WR -= wt[i];
+          const a = X[i][f], b = X[ord[k + 1]][f];
+          if (a === b || k + 1 < opt.minLeaf || ord.length - k - 1 < opt.minLeaf) continue;
+          let gL = 1, gR = 1; for (let c2 = 0; c2 < nC; c2++) { gL -= (L[c2] / WL) ** 2; gR -= (Rr[c2] / WR) ** 2; }
+          const gain = gini0 - (WL * gL + WR * gR) / (WL + WR);
+          if (gain > best.gain) best = { gain, f, t: (a + b) / 2 };
+        }
+      }
+      if (best.f < 0) return leaf();
+      imp[best.f] += best.gain * W;
+      // los valores faltantes van al lado más poblado
+      const lo = [], hi = []; for (const i of rows) { const v = X[i][best.f]; if (isNaN(v) ? false : v <= best.t) lo.push(i); else hi.push(i); }
+      if (!lo.length || !hi.length) return leaf();
+      T.f[id] = best.f; T.t[id] = +best.t.toFixed(5);
+      T.l[id] = node(lo, depth + 1); T.r[id] = node(hi, depth + 1);
+      return id;
+    };
+    node(idx, 0);
+    return T;
+  }
+  function treeProba(T, x) { let n = 0; while (T.f[n] >= 0) { const v = x[T.f[n]]; n = !isNaN(v) && v <= T.t[n] ? T.l[n] : T.r[n]; } return T.p[n]; }
+
+  // model = { classes, rf:{trees}, Z, y, w, mu, sd, k, medNN, imp }
+  function mlFit(examples, k, opts) {
+    const o = Object.assign({ trees: 60, maxDepth: 12, minLeaf: 2, abrCost: 2, seed: 7 }, opts || {});
+    const ex = examples.filter((e) => e && e.f && LABELS[e.label]);
+    const n = ex.length, d = ML_FEATS.length;
     if (n < 2) return null;
-    const mu = new Array(d).fill(0), sd = new Array(d).fill(0);
-    X.forEach((x) => x.forEach((v, j) => (mu[j] += v / n)));
-    X.forEach((x) => x.forEach((v, j) => (sd[j] += (v - mu[j]) ** 2 / n)));
-    for (let j = 0; j < d; j++) sd[j] = Math.max(1e-3, Math.sqrt(sd[j]));
-    const Z = X.map((x) => x.map((v, j) => (v - mu[j]) / sd[j]));
-    // distancia típica al vecino más cercano (para detectar casos "fuera de lo aprendido")
-    const nn = Z.map((a, i) => { let m = Infinity; Z.forEach((b, j) => { if (i !== j) { const q = dist(a, b); if (q < m) m = q; } }); return m; }).sort((a, b) => a - b);
-    return { Z, y, mu, sd, k: k || 5, medNN: nn[Math.floor(nn.length / 2)] || 1, n };
+    const classes = [...new Set(ex.map((e) => e.label))].sort(), cIdx = Object.fromEntries(classes.map((c, i) => [c, i])), nC = classes.length;
+    const X = ex.map((e) => mlVector(e.f)), yi = ex.map((e) => cIdx[e.label]);
+    // normalización (ignorando faltantes) e imputación con la media para k-NN
+    const mu = new Array(d).fill(0), sd = new Array(d).fill(0), cnt = new Array(d).fill(0);
+    X.forEach((x) => x.forEach((v, j) => { if (!isNaN(v)) { mu[j] += v; cnt[j]++; } }));
+    for (let j = 0; j < d; j++) mu[j] = cnt[j] ? mu[j] / cnt[j] : 0;
+    X.forEach((x) => x.forEach((v, j) => { if (!isNaN(v)) sd[j] += (v - mu[j]) ** 2; }));
+    for (let j = 0; j < d; j++) sd[j] = Math.max(1e-3, Math.sqrt(sd[j] / Math.max(1, cnt[j])));
+    // pesos: calidad del ejemplo × balance de clases × costo de las abrasivas
+    const per = new Array(nC).fill(0); ex.forEach((e, i) => (per[yi[i]] += e.w != null ? e.w : 1));
+    const wt = ex.map((e, i) => (e.w != null ? e.w : 1) * (n / (nC * Math.max(1e-6, per[yi[i]]))) * (groupOf(e.label) === 'ABR' ? o.abrCost : 1));
+    const R = rng(o.seed + n * 31), imp = new Array(d).fill(0), trees = [];
+    const all = ex.map((_, i) => i);
+    for (let t = 0; t < o.trees; t++) {
+      // remuestreo bootstrap
+      const boot = []; for (let s = 0; s < n; s++) boot.push(all[(R() * n) | 0]);
+      trees.push(growTree(X, yi, wt, boot, nC, d, o, R, imp));
+    }
+    const it = imp.reduce((a, b) => a + b, 0) || 1;
+    const Z = X.map((x) => KNN_IDX.map((j) => (isNaN(x[j]) ? 0 : (x[j] - mu[j]) / sd[j])));
+    const kd = (a, b) => { let s = 0; for (let j = 0; j < a.length; j++) { const q = a[j] - b[j]; s += q * q; } return Math.sqrt(s); };
+    const sample = Z.length > 600 ? Z.filter((_, i) => i % Math.ceil(Z.length / 600) === 0) : Z;
+    const nn = sample.map((a) => { let m = Infinity; for (const b of Z) { if (a !== b) { const q = kd(a, b); if (q < m) m = q; } } return m; }).sort((a, b) => a - b);
+    return { v: 2, classes, trees, Z, y: ex.map((e) => e.label), w: ex.map((e) => (e.w != null ? e.w : 1)), mu, sd, k: k || 5, medNN: nn[Math.floor(nn.length / 2)] || 1, nn95: nn[Math.floor(nn.length * 0.95)] || 1, n,
+      imp: imp.map((v) => +(v / it).toFixed(4)) };
   }
   function dist(a, b) { let s = 0; for (let j = 0; j < a.length; j++) { const t = a[j] - b[j]; s += t * t; } return Math.sqrt(s); }
-  function mlPredict(model, p, skip) {
-    const z = mlVector(p).map((v, j) => (v - model.mu[j]) / model.sd[j]);
-    const ds = [];
-    for (let i = 0; i < model.Z.length; i++) if (i !== skip) ds.push([dist(z, model.Z[i]), i]);
-    ds.sort((a, b) => a[0] - b[0]);
-    const nb = ds.slice(0, Math.min(model.k, ds.length));
-    const votes = {}, gv = {};
-    let tot = 0;
-    nb.forEach(([d, i]) => { const w = 1 / (d + 0.25); const lab = model.y[i]; votes[lab] = (votes[lab] || 0) + w; const g = (LABELS[lab] || LABELS.indet).group; gv[g] = (gv[g] || 0) + w; tot += w; });
-    let label = 'indet', best = -1;
-    for (const [l, v] of Object.entries(votes)) if (v > best) { best = v; label = l; }
-    const group = (LABELS[label] || LABELS.indet).group;
-    return { label, group, prob: tot ? best / tot : 0, groupProb: tot ? (gv[group] || 0) / tot : 0,
-      ood: !nb.length || nb[0][0] > 2.5 * Math.max(0.2, model.medNN), nearest: nb.map(([d, i]) => ({ i, d: +d.toFixed(2), label: model.y[i] })) };
+  function mlPredict(model, p) {
+    const x = mlVector(p), C = model.classes || [...new Set(model.y)].sort(), nC = C.length;
+    // 1) k-NN ponderado por distancia y por peso del ejemplo
+    const z = KNN_IDX.map((j) => (isNaN(x[j]) ? 0 : (x[j] - model.mu[j]) / model.sd[j]));
+    const k = Math.min(model.k, model.Z.length), best = [];
+    for (let i = 0; i < model.Z.length; i++) {
+      const dd = dist(z, model.Z[i]);
+      if (best.length < k) { best.push([dd, i]); best.sort((a, b) => a[0] - b[0]); }
+      else if (dd < best[k - 1][0]) { best[k - 1] = [dd, i]; best.sort((a, b) => a[0] - b[0]); }
+    }
+    const pk = new Array(nC).fill(0); let tk = 0;
+    best.forEach(([dd, i]) => { const w = (model.w ? model.w[i] : 1) / (dd + 0.25); pk[C.indexOf(model.y[i])] += w; tk += w; });
+    // 2) bosque aleatorio
+    const pf = new Array(nC).fill(0);
+    if (model.trees && model.trees.length) { for (const T of model.trees) { const pp = treeProba(T, x); for (let c = 0; c < nC; c++) pf[c] += pp[c] / model.trees.length; } }
+    const wf = model.trees && model.trees.length ? 0.6 : 0;
+    const P = pk.map((v, c) => (1 - wf) * (tk ? v / tk : 0) + wf * pf[c]);
+    let bi = 0; for (let c = 1; c < nC; c++) if (P[c] > P[bi]) bi = c;
+    const second = Math.max(0, ...P.filter((_, c) => c !== bi));
+    const label = C[bi] || 'indet', group = groupOf(label), groupProbs = {}, probs = {};
+    C.forEach((c, i) => { probs[c] = +P[i].toFixed(3); const g = groupOf(c); groupProbs[g] = (groupProbs[g] || 0) + P[i]; });
+    return { label, group, prob: P[bi] || 0, groupProb: groupProbs[group] || 0, groupProbs, probs, margin: (P[bi] || 0) - second,
+      // fuera de dominio: lejos de todo lo aprendido (umbral con piso: bibliotecas muy compactas no deben volverlo hipersensible)
+      ood: !best.length || best[0][0] > Math.max(1.2, 2.5 * model.medNN, 1.5 * (model.nn95 || 0)), nearest: best.map(([dd, i]) => ({ i, d: +dd.toFixed(2), label: model.y[i] })) };
   }
   // Fusión reglas + aprendizaje. Política conservadora: el aprendizaje puede SUBIR a abrasiva
   // sin restricción, pero solo puede BAJAR una abrasiva si es muy seguro y no hay brillo metálico.
@@ -1253,7 +1391,12 @@ function PVFactory() {
     if (!ml || mode === 'rules') return out;
     const L = (l) => LABELS[l] || LABELS.indet;
     const use = (why, conf) => Object.assign(out, { label: ml.label, group: ml.group, tipo: L(ml.label).name, conf, why, source: 'aprendizaje' });
-    if (ml.ood || ml.prob < 0.6) { out.why += ' · (aprendizaje: sin ejemplos parecidos)'; return out; }
+    if (ml.ood || ml.prob < 0.6) {
+      // aun dudando, si el aprendizaje ve una probabilidad relevante de abrasiva, una «blanda» va a sondeo
+      if (mode !== 'ml' && !ml.ood && rule.group === 'NOABR' && ((ml.groupProbs && ml.groupProbs.ABR) || 0) >= 0.4)
+        return Object.assign(out, { label: 'indet', group: 'IND', tipo: LABELS.indet.name, conf: 0.4, why: `Reglas: ${rule.tipo}; aprendizaje ve ${Math.round(ml.groupProbs.ABR * 100)} % de abrasiva → sondear`, source: 'discrepancia' });
+      out.why += ' · (aprendizaje: sin ejemplos parecidos)'; return out;
+    }
     if (mode === 'ml') return use(`Parecida a ejemplos etiquetados como «${L(ml.label).name}»`, ml.prob);
     if (ml.group === rule.group) { out.conf = Math.max(rule.conf, ml.prob); out.why += ' · confirmado por aprendizaje'; out.source = 'reglas+aprendizaje'; if (rule.group !== 'IND') { out.label = ml.label; out.tipo = L(ml.label).name; } return out; }
     if (ml.group === 'ABR') return use(`Aprendizaje: parecida a «${L(ml.label).name}» (prob. ${(ml.prob * 100).toFixed(0)} %)`, ml.prob);
@@ -1405,7 +1548,9 @@ function PVFactory() {
       sL = new Float64Array(n + 1), sL2 = new Float64Array(n + 1), sBg = new Float64Array(n + 1),
       dk = new Int32Array(n + 1), sX = new Float64Array(n + 1), sY = new Float64Array(n + 1),
       cN = new Int32Array(n + 1), cR = new Float64Array(n + 1), cG = new Float64Array(n + 1), cB = new Float64Array(n + 1),
-      cL = new Float64Array(n + 1), cL2 = new Float64Array(n + 1), cBg = new Float64Array(n + 1);
+      cL = new Float64Array(n + 1), cL2 = new Float64Array(n + 1), cBg = new Float64Array(n + 1),
+      // color del fondo bajo cada partícula (para el balance de blancos con la propia membrana)
+      sB1 = new Float64Array(n + 1), sB2 = new Float64Array(n + 1), cB1 = new Float64Array(n + 1), cB2 = new Float64Array(n + 1);
     const pts = new Array(n + 1), lastRow = new Int32Array(n + 1).fill(-1), rMin = new Int32Array(n + 1), rMax = new Int32Array(n + 1);
     const flush = (l) => { const y = lastRow[l]; pts[l].push([rMin[l], y], [rMin[l], y + 1], [rMax[l] + 1, y], [rMax[l] + 1, y + 1]); };
     for (let y = 0; y < h; y++) {
@@ -1414,9 +1559,9 @@ function PVFactory() {
         if (!l) continue;
         const p = i * 4, Li = 0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2];
         A[l]++; sR[l] += data[p]; sG[l] += data[p + 1]; sB[l] += data[p + 2];
-        sL[l] += Li; sL2[l] += Li * Li; sBg[l] += bL[i]; sX[l] += x; sY[l] += y;
+        sL[l] += Li; sL2[l] += Li * Li; sBg[l] += bL[i]; sX[l] += x; sY[l] += y; sB1[l] += b1[i]; sB2[l] += b2[i];
         if (S[i] >= 1) { // píxeles "núcleo": color sin contaminar por el fondo
-          cN[l]++; cR[l] += data[p]; cG[l] += data[p + 1]; cB[l] += data[p + 2]; cL[l] += Li; cL2[l] += Li * Li; cBg[l] += bL[i];
+          cN[l]++; cR[l] += data[p]; cG[l] += data[p + 1]; cB[l] += data[p + 2]; cL[l] += Li; cL2[l] += Li * Li; cBg[l] += bL[i]; cB1[l] += b1[i]; cB2[l] += b2[i];
           if (Li < 0.5 * bL[i]) dk[l]++;
         }
         if (x < minX[l]) minX[l] = x; if (x > maxX[l]) maxX[l] = x;
@@ -1433,12 +1578,22 @@ function PVFactory() {
     const spc = new Int32Array(n + 1), HB = 24, hist = new Int32Array((n + 1) * HB),
       cS1 = new Float64Array(n + 1), cS1q = new Float64Array(n + 1), cS2 = new Float64Array(n + 1), cS2q = new Float64Array(n + 1), grd = new Float64Array(n + 1), gN = new Int32Array(n + 1);
     const q = (l, f) => { const tot = A[l]; let acc = 0; for (let k = 0; k < HB; k++) { acc += hist[l * HB + k]; if (acc >= f * tot) return (k + 0.5) * 2 / HB; } return 2; };
+    // contorno (perímetro en píxeles 4-conexos), nitidez del borde y brillo máximo relativo
+    const per = new Int32Array(n + 1), bGr = new Float64Array(n + 1), mxRel = new Float32Array(n + 1);
     for (let i = 0, p = 0; i < N; i++, p += 4) {
       const l = lab[i]; if (!l) continue;
       const r = data[p], g = data[p + 1], b = data[p + 2];
       const Li = 0.299 * r + 0.587 * g + 0.114 * b, mx = Math.max(r, g, b), sat = mx ? (mx - Math.min(r, g, b)) / mx : 0;
       const bl = bL[i];
       if (sat < 0.28 && Li > bl + Math.max(10, 0.40 * (255 - bl))) spc[l]++;
+      const relB = Li / Math.max(8, bl); if (relB > mxRel[l]) mxRel[l] = relB;
+      {
+        const x = i % w, y = (i / w) | 0;
+        if (x === 0 || y === 0 || x === w - 1 || y === h - 1 || lab[i - 1] !== l || lab[i + 1] !== l || lab[i - w] !== l || lab[i + w] !== l) {
+          per[l]++;
+          if (x > 0 && y > 0 && x < w - 1 && y < h - 1) { const gx = L[i + 1] - L[i - 1], gy = L[i + w] - L[i - w]; bGr[l] += Math.sqrt(gx * gx + gy * gy) / Math.max(8, bl); }
+        }
+      }
       // textura: histograma de brillo relativo, nitidez interna y variación de color
       const rel = Li / Math.max(8, bl), bin = Math.min(HB - 1, Math.max(0, Math.floor(rel * HB / 2)));
       hist[l * HB + bin]++;
@@ -1460,6 +1615,13 @@ function PVFactory() {
       const hsv = rgb2hsv(mR, mG, mB);
       const varL = Math.max(0, (core ? cL2[l] : sL2[l]) / k - mL * mL);
       const touches = minX[l] <= 0 || minY[l] <= 0 || maxX[l] >= w - 1 || maxY[l] >= h - 1;
+      // Balance de blancos con la membrana vecina (von Kries): el color deja de depender de la
+      // cámara y de la temperatura de la luz de cada estereoscopio → el aprendizaje viaja entre sitios.
+      const mB1 = (core ? cB1[l] : sB1[l]) / k, mB2 = (core ? cB2[l] : sB2[l]) / k;
+      const bgR = Math.max(8, mBg + 0.644 * mB1 + 0.114 * mB2), bgG = Math.max(8, bgR - mB1), bgB = Math.max(8, bgR - 0.5 * mB1 - mB2);
+      const ref = Math.max(8, mBg), wb = rgb2hsv(Math.min(255, mR * ref / bgR), Math.min(255, mG * ref / bgG), Math.min(255, mB * ref / bgB));
+      let hullPer = 0; for (let j = 0; j < hull.length; j++) { const a = hull[j], b = hull[(j + 1) % hull.length]; hullPer += Math.hypot(b[0] - a[0], b[1] - a[1]); }
+      const perim = Math.max(1, per[l] * 1.12); // conteo de píxeles de borde ≈ perímetro (corrección de diagonales)
       const p = {
         id: particles.length + 1,
         x: minX[l], y: minY[l], w: maxX[l] - minX[l] + 1, h: maxY[l] - minY[l] + 1,
@@ -1476,6 +1638,12 @@ function PVFactory() {
         q10: q(l, 0.1), q90: q(l, 0.9),
         grad: gN[l] ? grd[l] / gN[l] : 0,
         chromaStd: Math.sqrt(Math.max(0, cS1q[l] / A[l] - (cS1[l] / A[l]) ** 2) + Math.max(0, cS2q[l] / A[l] - (cS2[l] / A[l]) ** 2)) / 255,
+        wbHue: wb.h, wbSat: wb.s,
+        maxRel: Math.min(3, mxRel[l]),
+        edgeSharp: per[l] ? bGr[l] / per[l] : 0,
+        circ: Math.min(1, 4 * Math.PI * A[l] / (perim * perim)),
+        convex: Math.min(1, hullPer / perim),
+        extent: A[l] / Math.max(1, (maxX[l] - minX[l] + 1) * (maxY[l] - minY[l] + 1)),
         edge: touches,
       };
       Object.assign(p, classify(p, o.classifier));
@@ -1520,7 +1688,7 @@ function PVFactory() {
     };
   }
 
-  return { analyze, verdict, classify, ruleClassify, explain, fuse, mlFit, mlPredict, mlVector, ML_FEATS, LABELS, FEATURES, RULES, FALLBACK, DEFAULTS, CRIT, rgb2hsv, labelCC, convexHull, caliper };
+  return { analyze, verdict, classify, ruleClassify, explain, fuse, mlFit, mlPredict, mlVector, ML_FEATS, FEAT_KEYS, LABELS, FEATURES, RULES, FALLBACK, DEFAULTS, CRIT, rgb2hsv, labelCC, convexHull, caliper };
 }
 const PV = PVFactory();
 if (typeof module !== 'undefined') module.exports = PV;
@@ -1550,15 +1718,32 @@ class Tracker {
       ['x', 'y', 'w', 'h', 'cx', 'cy'].forEach((k) => (t[k] += (d[k] - t[k]) * a));
       t.L += (d.lengthUm - t.L) * 0.5; t.Wd = d.widthUm; t.area = d.areaUm2; t.maxL = Math.max(t.maxL, d.lengthUm);
       t.votes[d.group] = (t.votes[d.group] || 0) + 1; t.hits++; t.miss = 0; t.tipo = d.tipo;
+      Tracker.evidence(t, d);
     }
-    this.tracks.forEach((t, ti) => { if (!tUsed.has(ti)) t.miss++; });
+    this.tracks.forEach((t, ti) => { if (!tUsed.has(ti)) { t.miss++; t.last = null; } });
     this.tracks = this.tracks.filter((t) => t.miss <= 6);
     dets.forEach((d, di) => {
       if (dUsed.has(di)) return;
-      this.tracks.push({ id: this.next++, x: d.x, y: d.y, w: d.w, h: d.h, cx: d.cx, cy: d.cy, vx: 0, vy: 0, L: d.lengthUm, Wd: d.widthUm, area: d.areaUm2, maxL: d.lengthUm, votes: { [d.group]: 1 }, hits: 1, miss: 0, tipo: d.tipo });
+      const t = { id: this.next++, x: d.x, y: d.y, w: d.w, h: d.h, cx: d.cx, cy: d.cy, vx: 0, vy: 0, L: d.lengthUm, Wd: d.widthUm, area: d.areaUm2, maxL: d.lengthUm, votes: { [d.group]: 1 }, hits: 1, miss: 0, tipo: d.tipo,
+        fine: {}, agree: 0, doubt: 0, ood: 0, pAbr: 0, nEv: 0 };
+      Tracker.evidence(t, d);
+      this.tracks.push(t);
     });
     return this.tracks;
   }
+  // evidencia acumulada cuadro a cuadro: base del autoaprendizaje y de la cola de revisión
+  static evidence(t, d) {
+    t.fine = t.fine || {}; t.last = d; t.nEv = (t.nEv || 0) + 1;
+    if (d.label) t.fine[d.label] = (t.fine[d.label] || 0) + 1;
+    if (d.ml) {
+      if (d.ml.ood) t.ood = (t.ood || 0) + 1;
+      else if (d.ml.group === d.ruleGroup && d.ml.prob >= 0.85) t.agree = (t.agree || 0) + 1;
+      if (d.ml.margin < 0.25 || d.source === 'discrepancia') t.doubt = (t.doubt || 0) + 1;
+      t.pAbr = (t.pAbr || 0) * 0.7 + d.ml.pAbr * 0.3;
+    }
+    if (!t.best || d.areaUm2 > t.best.areaUm2) t.best = d; // la vista más grande es la mejor muestra
+  }
+  static fineLabel(t) { let b = '', n = -1; for (const [l, v] of Object.entries(t.fine || {})) if (v > n) { n = v; b = l; } return [b, n / Math.max(1, t.nEv || 1)]; }
   static group(t) {
     let best = 'IND', n = -1;
     for (const [g, v] of Object.entries(t.votes)) { const w = v + (g === 'ABR' ? 0.5 : 0); if (w > n) { n = w; best = g; } }
@@ -1567,20 +1752,28 @@ class Tracker {
 }
 
 const Det = (() => {
-  let worker = null, busy = false, cb = null, failed = false;
+  let worker = null, busy = false, cb = null, failed = false, sentModel;
   function init() {
     try {
       const src = PVFactory.toString() + `
 const PV = PVFactory();
+let MODEL = null; // el modelo llega una sola vez por versión (no en cada cuadro)
 onmessage = (e) => {
-  const { w, h, buf, opts } = e.data;
+  const { w, h, buf, opts, model } = e.data;
+  if (model !== undefined) MODEL = model;
   try {
+    if (opts.classifier) opts.classifier.model = MODEL;
     const r = PV.analyze({ width: w, height: h, data: new Uint8ClampedArray(buf) }, opts);
-    postMessage({ ok: true, ms: r.timings.total, parts: r.particles.map((p) => ({ x: p.x, y: p.y, w: p.w, h: p.h, cx: p.cx, cy: p.cy, lengthUm: p.lengthUm, widthUm: p.widthUm, areaUm2: p.areaUm2, group: p.group, tipo: p.tipo })) });
+    postMessage({ ok: true, ms: r.timings.total, parts: r.particles.map((p) => {
+      const f = {}; PV.FEAT_KEYS.forEach((k) => (f[k] = +(+p[k] || 0).toFixed(4)));
+      return { x: p.x, y: p.y, w: p.w, h: p.h, cx: p.cx, cy: p.cy, lengthUm: p.lengthUm, widthUm: p.widthUm, areaUm2: p.areaUm2, group: p.group, tipo: p.tipo, label: p.label, source: p.source,
+        ruleGroup: p.rule ? p.rule.group : p.group, ruleLabel: p.rule ? p.rule.label : p.label,
+        ml: p.ml ? { label: p.ml.label, group: p.ml.group, prob: p.ml.prob, margin: p.ml.margin, ood: p.ml.ood, pAbr: (p.ml.groupProbs && p.ml.groupProbs.ABR) || 0 } : null, f };
+    }) });
   } catch (err) { postMessage({ ok: false, error: String(err && err.message || err) }); }
 };`;
       worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
-      worker.onmessage = (e) => { busy = false; const f = cb; cb = null; if (e.data.ok && f) f(e.data); };
+      worker.onmessage = (e) => { busy = false; const f = cb; cb = null; if (e.data.ok && f) f(e.data); else if (!e.data.ok) console.warn('Detector:', e.data.error); };
       worker.onerror = () => { failed = true; busy = false; worker = null; console.warn('Worker no disponible: detección en el hilo principal'); };
     } catch (e) { failed = true; worker = null; }
   }
@@ -1588,11 +1781,20 @@ onmessage = (e) => {
     if (!worker && !failed) init();
     if (worker && !failed) {
       busy = true; cb = done;
-      worker.postMessage({ w: imageData.width, h: imageData.height, buf: imageData.data.buffer, opts }, [imageData.data.buffer]);
+      const msg = { w: imageData.width, h: imageData.height, buf: imageData.data.buffer, opts: Object.assign({}, opts) };
+      if (opts.classifier) {
+        const m = opts.classifier.model || null;
+        msg.opts.classifier = Object.assign({}, opts.classifier, { model: null });
+        if (m !== sentModel) { msg.model = m; sentModel = m; }
+      }
+      worker.postMessage(msg, [imageData.data.buffer]);
       return;
     }
     const r = PV.analyze(imageData, opts);
-    done({ ms: r.timings.total, parts: r.particles });
+    done({ ms: r.timings.total, parts: r.particles.map((p) => Object.assign(p, {
+      ruleGroup: p.rule ? p.rule.group : p.group, ruleLabel: p.rule ? p.rule.label : p.label,
+      ml: p.ml ? { label: p.ml.label, group: p.ml.group, prob: p.ml.prob, margin: p.ml.margin, ood: p.ml.ood, pAbr: (p.ml.groupProbs && p.ml.groupProbs.ABR) || 0 } : null,
+      f: Object.fromEntries(PV.FEAT_KEYS.map((k) => [k, +(+p[k] || 0).toFixed(4)])) })) });
   }
   return { run, get busy() { return busy; }, get async() { return !!worker && !failed; } };
 })();
@@ -1602,7 +1804,7 @@ onmessage = (e) => {
  * ===================================================================== */
 // Copia íntegra del documento ANTES de que el script lo modifique: permite
 // descargar la app (con los ejemplos de aprendizaje incluidos) desde cualquier copia.
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.0';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
@@ -1696,20 +1898,21 @@ const Store = {
 };
 // IndexedDB simple (con respaldo en memoria si el navegador lo bloquea)
 const DB = (() => {
-  let dbp = null; const mem = new Map();
+  // 'ex' = ejemplos etiquetados · 'q' = cola de revisión (partículas dudosas que la app pide confirmar)
+  let dbp = null; const mem = { ex: new Map(), q: new Map() };
   const open = () => dbp || (dbp = new Promise((res, rej) => {
     try {
-      const r = indexedDB.open('pv2-aprendizaje', 1);
-      r.onupgradeneeded = () => r.result.createObjectStore('ex', { keyPath: 'id' });
+      const r = indexedDB.open('pv2-aprendizaje', 2);
+      r.onupgradeneeded = () => { const d = r.result; if (!d.objectStoreNames.contains('ex')) d.createObjectStore('ex', { keyPath: 'id' }); if (!d.objectStoreNames.contains('q')) d.createObjectStore('q', { keyPath: 'id' }); };
       r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
     } catch (e) { rej(e); }
   }));
-  const tx = async (mode, fn) => { const d = await open(); return new Promise((res, rej) => { const t = d.transaction('ex', mode), out = fn(t.objectStore('ex')); t.oncomplete = () => res(out && out.result); t.onerror = () => rej(t.error); }); };
+  const tx = async (st, mode, fn) => { const d = await open(); return new Promise((res, rej) => { const t = d.transaction(st, mode), out = fn(t.objectStore(st)); t.oncomplete = () => res(out && out.result); t.onerror = () => rej(t.error); }); };
   return {
-    async all() { try { return (await tx('readonly', (s) => s.getAll())) || []; } catch (e) { return [...mem.values()]; } },
-    async put(x) { mem.set(x.id, x); try { await tx('readwrite', (s) => s.put(x)); } catch (e) { /* memoria */ } },
-    async del(id) { mem.delete(id); try { await tx('readwrite', (s) => s.delete(id)); } catch (e) { /* memoria */ } },
-    async clear() { mem.clear(); try { await tx('readwrite', (s) => s.clear()); } catch (e) { /* memoria */ } },
+    async all(st = 'ex') { try { return (await tx(st, 'readonly', (s) => s.getAll())) || []; } catch (e) { return [...mem[st].values()]; } },
+    async put(x, st = 'ex') { mem[st].set(x.id, x); try { await tx(st, 'readwrite', (s) => s.put(x)); } catch (e) { /* memoria */ } },
+    async del(id, st = 'ex') { mem[st].delete(id); try { await tx(st, 'readwrite', (s) => s.delete(id)); } catch (e) { /* memoria */ } },
+    async clear(st = 'ex') { mem[st].clear(); try { await tx(st, 'readwrite', (s) => s.clear()); } catch (e) { /* memoria */ } },
   };
 })();
 
@@ -1717,11 +1920,11 @@ const DB = (() => {
 const DEFAULT_CFG = () => ({
   profiles: [{ id: 'def', name: 'Sin calibrar (valor aproximado)', umPerPx: 2.0, refWidth: 1920, verified: false }],
   activeProfile: 'def', minDetectUm: 25, maxPx: 1600, removeRed: true, policy: 'conservadora',
-  crit: Object.assign({}, PV.CRIT), rules: null, ml: { mode: 'conservador', k: 5 }, theme: 'dark', updatedAt: 0,
+  crit: Object.assign({}, PV.CRIT), rules: null, ml: { mode: 'conservador', k: 5, auto: true, queue: true }, site: '', theme: 'dark', updatedAt: 0,
 });
 let CFG = Object.assign(DEFAULT_CFG(), Store.get('cfg', {}));
 CFG.crit = Object.assign({}, PV.CRIT, CFG.crit || {});
-CFG.ml = Object.assign({ mode: 'conservador', k: 5 }, CFG.ml || {});
+CFG.ml = Object.assign({ mode: 'conservador', k: 5, auto: true, queue: true }, CFG.ml || {});
 const Cfg = {
   save() { CFG.updatedAt = Date.now(); Store.set('cfg', CFG); },
   profile() { return CFG.profiles.find((p) => p.id === CFG.activeProfile) || CFG.profiles[0]; },
@@ -1939,6 +2142,7 @@ const An = (() => {
       S.parts.forEach((p, i) => { p.id = i + 1; const k = Math.round(p.cx) + ':' + Math.round(p.cy); if (prevLabels.has(k)) setUserLabel(p, prevLabels.get(k), false); });
       if (!S.parts.some((p) => p.id === S.sel)) S.sel = 0;
       showBase(); buildMask(res.mask); evaluate();
+      try { Learn.observePhoto(S.parts, (p) => crop(p, 64), S.img.name); } catch (e) { console.warn(e); }
       $('#anInfo').textContent = `${S.parts.length} partículas ≥ ${CFG.minDetectUm} µm en ${Math.round(res.timings.total)} ms${res.redRemoved ? ' · se ignoraron las marcas de medición de la foto' : ''}${Learn.activeModel() ? ' · aprendizaje activo' : ''}.`;
     } catch (e) { console.error(e); U.toast('No se pudo analizar: ' + U.esc(e.message), 'err'); }
     finally { $('#busy').classList.remove('on'); }
@@ -2477,6 +2681,59 @@ const Live = (() => {
       else U.toast('No se compartió la pantalla (' + U.esc(e.name) + ').', 'err');
     }
   }
+  /* Cámara WiFi del estereoscopio: muchas cámaras WiFi de microscopio sirven una imagen JPEG por
+     HTTP dentro de su propia red (sin internet). Se pide una y otra vez y se analiza como video.
+     En la APK se usa el HTTP nativo de Capacitor (sin bloqueo CORS ni de contenido mixto). */
+  const WIFI_GUESS = ['http://192.168.1.1/snapshot.jpg', 'http://192.168.1.1/snapshot.cgi', 'http://192.168.1.1/cgi-bin/snapshot.cgi', 'http://192.168.1.1/capture', 'http://192.168.1.1:8080/shot.jpg', 'http://192.168.0.1/snapshot.jpg', 'http://192.168.10.1/snapshot.jpg', 'http://192.168.100.1/snapshot.jpg', 'http://10.10.10.1/snapshot.jpg', 'http://192.168.43.1:8080/shot.jpg'];
+  async function grabJpeg(url, ms) {
+    const H = Env.native ? Env.plugin('CapacitorHttp') : null, ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const to = setTimeout(() => ctl && ctl.abort(), ms || 2500);
+    try {
+      if (H && H.request) {
+        const r = await H.request({ url, method: 'GET', responseType: 'blob', connectTimeout: ms || 2500, readTimeout: ms || 2500, headers: { 'Cache-Control': 'no-cache' } });
+        if (r.status !== 200 || !r.data) throw new Error('HTTP ' + r.status);
+        return U.dataURLtoBlob('data:image/jpeg;base64,' + String(r.data).replace(/^data:[^,]*,/, ''));
+      }
+      const r = await fetch(url + (url.includes('?') ? '&' : '?') + '_=' + Date.now(), { cache: 'no-store', signal: ctl && ctl.signal });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const b = await r.blob(); if (!/^image\//.test(b.type) && b.size < 2000) throw new Error('no es una imagen');
+      return b;
+    } finally { clearTimeout(to); }
+  }
+  async function startWifi(url) {
+    notice(null);
+    url = (url || $('#wifiUrl').value || '').trim();
+    if (!/^https?:\/\//i.test(url)) { U.toast('Escriba la dirección de la imagen de la cámara (http://…)', 'err'); return; }
+    stopSource();
+    const cvs = document.createElement('canvas'), cx = cvs.getContext('2d');
+    Object.assign(cvs, { readyState: 0, paused: false, videoWidth: 0, videoHeight: 0, pause() {}, play() {} });
+    const job = { on: true, fails: 0 };
+    try {
+      const first = await grabJpeg(url, 3000), bm = await createImageBitmap(first);
+      cvs.width = bm.width; cvs.height = bm.height; cx.drawImage(bm, 0, 0); cvs.videoWidth = bm.width; cvs.videoHeight = bm.height; cvs.readyState = 4;
+    } catch (e) {
+      return notice('No se pudo leer la cámara WiFi', `Dirección probada: <b>${U.esc(url)}</b> (${U.esc(e.message || e)}).<ul><li>Conecte la tablet a la red WiFi de la cámara del estereoscopio.</li><li>Busque en el manual de la cámara la dirección de «instantánea» o «snapshot» (o pruebe «Buscar»).</li><li>Si la cámara solo se ve en su propia app (por ejemplo MotiConnect), use el modo <b>Pantalla</b> con esa app en pantalla dividida: funciona siempre.</li></ul>`);
+    }
+    (async function pump() {
+      while (job.on) {
+        const t0 = performance.now();
+        try { const bm = await createImageBitmap(await grabJpeg(url, 2500)); if (!job.on) break; if (cvs.width !== bm.width || cvs.height !== bm.height) { cvs.width = bm.width; cvs.height = bm.height; } cx.drawImage(bm, 0, 0); cvs.videoWidth = bm.width; cvs.videoHeight = bm.height; job.fails = 0; }
+        catch (e) { if (++job.fails === 8) U.toast('La cámara WiFi dejó de responder. ¿Se desconectó la red?', 'err', 6000); await new Promise((r) => setTimeout(r, 500)); }
+        await new Promise((r) => setTimeout(r, Math.max(0, 120 - (performance.now() - t0)))); // ≈ 8 imágenes/s como máximo
+      }
+    })();
+    src.native = { stop: async () => { job.on = false; } }; src.video = cvs; src.name = 'Cámara WiFi';
+    try { localStorage.setItem('pv2.wifiUrl', url); } catch (e) { /* noop */ }
+    $('#btnCamStop').disabled = false; tracker.reset(); sweep.reset(); renderSweep();
+    $('#liveHint').textContent = `Cámara WiFi ${cvs.videoWidth}×${cvs.videoHeight} · ${url} · escala: ${Cfg.profile().name}`;
+  }
+  async function scanWifi() {
+    U.toast('Buscando la cámara en las direcciones habituales…', 'info', 3000);
+    for (const u of WIFI_GUESS) {
+      try { const b = await grabJpeg(u, 1200); if (b && b.size > 2000) { $('#wifiUrl').value = u; U.toast('Cámara encontrada: ' + U.esc(u), 'ok'); return startWifi(u); } } catch (e) { /* siguiente */ }
+    }
+    notice('No se encontró la cámara en las direcciones habituales', 'Escriba la dirección exacta del manual de la cámara, o use el modo <b>Pantalla</b> con la app del fabricante (MotiConnect u otra) en pantalla dividida.');
+  }
   async function startVideo(file) {
     stopSource(); notice(null);
     const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.loop = $('#vidLoop').checked;
@@ -2519,7 +2776,7 @@ const Live = (() => {
     const [a, b] = tool.pts; tool.pts = [];
     if (tool.kind === 'measure') { tool.measures.push([a, b]); return; }
     const px = Math.hypot(b[0] - a[0], b[1] - a[1]) / geom.k;
-    Calib.open(px, { refW: geom.vw, name: `${{ cam: 'Cámara', screen: 'Pantalla', video: 'Video' }[mode]} ${geom.vw}×${geom.vh} · ${U.today()}`,
+    Calib.open(px, { refW: geom.vw, name: `${{ cam: 'Cámara', screen: 'Pantalla', video: 'Video', wifi: 'Cámara WiFi' }[mode]} ${geom.vw}×${geom.vh} · ${U.today()}`,
       onDone: (prof) => { setTool(''); freeze(false); tracker.reset(); sweep.reset(); renderSweep(); $('#liveHint').textContent = `Escala activa: ${prof.name} (${prof.umPerPx.toFixed(4)} µm/px).`; } });
   }
   function drawTool() {
@@ -2577,7 +2834,7 @@ const Live = (() => {
       drawBoxes(); drawTool();
     } else {
       ctx.fillStyle = '#9AA6B3'; ctx.font = '600 16px system-ui'; ctx.textAlign = 'center';
-      ctx.fillText({ cam: 'Elija la cámara y pulse «Iniciar cámara»', screen: 'Pulse «Compartir pantalla o ventana»', video: 'Abra un video del estereoscopio' }[mode], W / 2, H / 2);
+      ctx.fillText({ cam: 'Elija la cámara y pulse «Iniciar cámara»', screen: 'Pulse «Compartir pantalla o ventana»', video: 'Abra un video del estereoscopio', wifi: 'Escriba la dirección de la cámara WiFi y pulse «Conectar»' }[mode], W / 2, H / 2);
       ctx.textAlign = 'left';
     }
     hud();
@@ -2585,8 +2842,15 @@ const Live = (() => {
   function onDetections(r, meta) {
     if (meta.mode !== mode || tool.frozen) return;
     const k = meta.k;
-    const dets = r.parts.filter((p) => p.lengthUm >= 20).map((p) => ({ x: p.x * k, y: p.y * k, w: p.w * k, h: p.h * k, cx: p.cx * k, cy: p.cy * k, lengthUm: p.lengthUm, widthUm: p.widthUm, areaUm2: p.areaUm2, group: p.group, tipo: p.tipo }));
+    const dets = r.parts.filter((p) => p.lengthUm >= 20).map((p) => ({ x: p.x * k, y: p.y * k, w: p.w * k, h: p.h * k, cx: p.cx * k, cy: p.cy * k, lengthUm: p.lengthUm, widthUm: p.widthUm, areaUm2: p.areaUm2, group: p.group, tipo: p.tipo,
+      label: p.label, source: p.source, ruleGroup: p.ruleGroup, ml: p.ml, f: p.f, px: [p.x, p.y, p.w, p.h] }));
     tracker.match(dets);
+    // autoaprendizaje: la imagen analizada sigue en «proc» (no se redibuja mientras el detector trabaja)
+    Learn.observeLive(tracker.tracks, (d) => {
+      const [x0, y0, w0, h0] = d.px, s = Math.max(w0, h0) * 1.5 + 16, c = document.createElement('canvas'); c.width = c.height = 64;
+      const x = c.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, 64, 64);
+      x.drawImage(proc, x0 + w0 / 2 - s / 2, y0 + h0 / 2 - s / 2, s, s, 0, 0, 64, 64); return c;
+    }, src.name || mode);
     procMs = procMs ? procMs * 0.85 + r.ms * 0.15 : r.ms;
     const inst = 1000 / Math.max(1, performance.now() - (lastDetT || meta.t0)); detHz = detHz ? detHz * 0.9 + inst * 0.1 : inst; lastDetT = performance.now();
     every = Det.async ? 1 : procMs > 30 ? 3 : procMs > 14 ? 2 : 1;
@@ -2657,15 +2921,15 @@ const Live = (() => {
     const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext('2d').drawImage(v, 0, 0);
     if (mode === 'video') v.pause();
     App.go('an');
-    await An.load(await U.toBlob(c, 'image/png'), `cuadro_${U.stamp()}.png`, mode === 'cam' ? 'cámara' : mode === 'screen' ? 'pantalla' : 'video');
+    await An.load(await U.toBlob(c, 'image/png'), `cuadro_${U.stamp()}.png`, mode === 'cam' ? 'cámara' : mode === 'screen' ? 'pantalla' : mode === 'wifi' ? 'cámara wifi' : 'video');
   }
   function setMode(m) {
     if (m !== mode) stopSource();
     mode = m;
     $$('#liveMode button').forEach((x) => x.classList.toggle('on', x.dataset.mode === m));
-    $('#camBar').hidden = m !== 'cam'; $('#screenBar').hidden = m !== 'screen'; $('#vidBar').hidden = m !== 'video';
+    $('#camBar').hidden = m !== 'cam'; $('#screenBar').hidden = m !== 'screen'; $('#vidBar').hidden = m !== 'video'; $('#wifiBar').hidden = m !== 'wifi';
     notice(null);
-    $('#liveHint').textContent = { cam: 'En planta: la capturadora HDMI-USB conectada a la salida del estereoscopio aparece en la lista. En celular o tablet: cámara trasera apuntando al ocular o al monitor.', screen: 'Comparta la ventana donde está la foto del parche. Luego «Calibrar en vivo» sobre una distancia conocida.', video: 'Reproduzca un video grabado del estereoscopio.' }[m];
+    $('#liveHint').textContent = { cam: 'En planta: la capturadora HDMI-USB conectada a la salida del estereoscopio aparece en la lista. En celular o tablet: cámara trasera apuntando al ocular o al monitor.', screen: Env.native ? 'Abra la app de la cámara del estereoscopio (por ejemplo MotiConnect) en pantalla dividida y pulse «Compartir pantalla». Luego «Calibrar en vivo».' : 'Comparta la ventana donde está la foto del parche. Luego «Calibrar en vivo» sobre una distancia conocida.', video: 'Reproduzca un video grabado del estereoscopio.', wifi: 'Experimental: conecte la tablet a la red WiFi de la cámara del estereoscopio y escriba la dirección de su imagen (snapshot), o pulse «Buscar». Si la cámara solo funciona con su propia app, use «Pantalla».' }[m];
     if (m === 'screen' && !Env.canScreen) startScreen();
     if (m === 'cam' && (!Env.canCamera || (Env.inIframe && !Env.policyAllows('camera')))) explainBlocked('cámara');
     tracker.reset(); sweep.reset(); fieldV = null; renderSweep();
@@ -2673,6 +2937,8 @@ const Live = (() => {
   function bind() {
     $$('#liveMode button').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
     $('#btnCamStart').onclick = startCam; $('#btnScreen').onclick = startScreen;
+    $('#btnWifi').onclick = () => startWifi(); $('#btnWifiScan').onclick = scanWifi;
+    try { $('#wifiUrl').value = localStorage.getItem('pv2.wifiUrl') || ''; } catch (e) { /* noop */ }
     $('#btnCamStop').onclick = () => { stopSource(); $('#liveHint').textContent = 'Fuente detenida.'; };
     $('#btnVidOpen').onclick = () => $('#vidIn').click();
     $('#vidIn').addEventListener('change', (e) => { const f = e.target.files[0]; if (f) startVideo(f); e.target.value = ''; });
@@ -2779,18 +3045,24 @@ const Crit = (() => {
 })();
 
 /* =====================================================================
- * APRENDIZAJE · ejemplos etiquetados, k-NN, validación por foto, activación
+ * APRENDIZAJE · ensamble bosque aleatorio + k-NN, validación por foto, cola de revisión
+ *               (aprendizaje activo) y autoaprendizaje con pseudo-etiquetas en video
  * ===================================================================== */
 const Learn = (() => {
   const GATE = { minN: 30, minSources: 3, minGroupAcc: 0.85, maxCritical: 0.03 };
-  const KEEP = ['hue', 'sat', 'relL', 'spec', 'stdRel', 'darkFrac', 'elong', 'solidity', 'thickUm', 'lenThick', 'widthUm', 'lengthUm', 'coreFrac', 'q10', 'q90', 'grad', 'chromaStd'];
-  let ex = [], model = null, val = null, status = 'vacio', sel = new Set(), filter = '', single = [];
+  // Autoaprendizaje: límites para que la app no se «convenza sola» de un error (sesgo de confirmación)
+  const AUTO = { minHits: 8, minAgree: 0.8, minShare: 0.85, maxOod: 0.1, weight: 0.35, maxFrac: 0.5, maxTotal: 1500, perMin: 6 };
+  const QUEUE = { max: 300, minHits: 4, doubt: 0.4, ood: 0.5, gapMs: 2500 };
+  let ex = [], model = null, val = null, status = 'vacio', sel = new Set(), filter = '', single = [], queue = [], qSel = null, lastQ = 0, autoTimes = [], drift = { n: 0, ood: 0, warned: false }, version = 0;
 
   /* ---------------- datos ---------------- */
-  function feats(p) { const f = {}; KEEP.forEach((k) => (f[k] = +(+p[k] || 0).toFixed(4))); return f; }
+  function feats(p) { const f = {}; PV.FEAT_KEYS.forEach((k) => { const v = p.f && p.f[k] != null ? p.f[k] : p[k]; f[k] = +(+v || 0).toFixed(4); }); return f; }
   const keyOf = (p, src) => `${src}|${Math.round(p.cx)}|${Math.round(p.cy)}`;
+  const newId = (pre) => pre + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const human = () => ex.filter((e) => !e.auto);
   async function load() {
     ex = await DB.all();
+    queue = (await DB.all('q')).sort((a, b) => (a.at < b.at ? 1 : -1));
     try {
       const emb = JSON.parse($('#pv-data').textContent || '{}').examples || [];
       const have = new Set(ex.map((e) => e.id)); let added = 0;
@@ -2799,19 +3071,26 @@ const Learn = (() => {
     } catch (e) { /* sin datos incluidos */ }
     retrain();
   }
+  function mkExample(p, label, thumb, src, extra) {
+    return Object.assign({ id: newId('e'), key: keyOf(p, src), label, f: feats(p), thumb: typeof thumb === 'string' ? thumb : thumb.toDataURL('image/jpeg', 0.72), src: src || 'foto', site: CFG.site || '', at: new Date().toISOString() }, extra || {});
+  }
   async function addFromParticle(p, label, thumbCanvas, src) {
     const key = keyOf(p, src);
     for (const e of ex.filter((x) => x.key === key)) await DB.del(e.id);
     ex = ex.filter((x) => x.key !== key);
-    const e = { id: 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), key, label, f: feats(p), thumb: thumbCanvas.toDataURL('image/jpeg', 0.72), src: src || 'foto', at: new Date().toISOString() };
-    ex.push(e); await DB.put(e); retrain();
+    const e = mkExample(p, label, thumbCanvas, src);
+    ex.push(e); await DB.put(e);
+    // si estaba en la cola de revisión, ya quedó resuelta
+    for (const q of queue.filter((x) => x.key === key)) await DB.del(q.id, 'q');
+    queue = queue.filter((x) => x.key !== key);
+    retrain();
   }
   async function addMany(items, src) {
     for (const { p, label, thumb } of items) {
       const key = keyOf(p, src);
       const old = ex.filter((x) => x.key === key); for (const o of old) await DB.del(o.id);
       ex = ex.filter((x) => x.key !== key);
-      const e = { id: 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), key, label, f: feats(p), thumb: thumb.toDataURL('image/jpeg', 0.72), src: src || 'foto', at: new Date().toISOString() };
+      const e = mkExample(p, label, thumb, src);
       ex.push(e); await DB.put(e);
     }
     retrain();
@@ -2822,36 +3101,118 @@ const Learn = (() => {
     ex = ex.filter((x) => x.key !== key); retrain();
   }
 
+  /* ---------------- cola de revisión (aprendizaje activo) ----------------
+   * La app elige sola las partículas de las que MÁS aprendería: donde reglas y aprendizaje discrepan,
+   * donde duda entre dos clases o donde no se parece a nada conocido (otra cámara, otra luz, otro
+   * material). Un toque del operador las convierte en ejemplos. */
+  async function enqueue(item) {
+    if (!CFG.ml.queue) return false;
+    if (queue.some((q) => q.key === item.key) || ex.some((e) => e.key === item.key)) return false;
+    const q = Object.assign({ id: newId('q'), at: new Date().toISOString(), site: CFG.site || '' }, item);
+    queue.unshift(q); await DB.put(q, 'q');
+    while (queue.length > QUEUE.max) { const o = queue.pop(); await DB.del(o.id, 'q'); }
+    renderQueueBadge();
+    return true;
+  }
+  const reasonOf = (d) => (d.ml && d.ml.ood ? 'No se parece a nada aprendido' : d.source === 'discrepancia' ? 'Reglas y aprendizaje discrepan' : d.group === 'IND' ? 'Las reglas no alcanzan (sondear)' : 'El aprendizaje duda entre dos clases');
+  // fotos: las más informativas de cada análisis (máximo 6 por foto)
+  function observePhoto(parts, cropFn, src) {
+    if (!CFG.ml.queue) return;
+    const cand = parts.filter((p) => !p.userLabel && p.lengthUm >= Math.max(25, CFG.minDetectUm) && (p.group === 'IND' || p.source === 'discrepancia' || (p.ml && (p.ml.ood || p.ml.margin < 0.25))))
+      .sort((a, b) => b.lengthUm - a.lengthUm).slice(0, 6);
+    cand.forEach((p) => enqueue({ key: keyOf(p, src), src, f: feats(p), thumb: cropFn(p).toDataURL('image/jpeg', 0.72), sugg: p.ml ? p.ml.label : p.label, prob: p.ml ? +p.ml.prob.toFixed(2) : +p.conf.toFixed(2), reason: reasonOf(p), lengthUm: Math.round(p.lengthUm) }));
+  }
+  // video en vivo: seguimiento de varios cuadros = evidencia mucho más fuerte que una sola foto
+  function observeLive(tracks, cropFn, srcName) {
+    const now = Date.now(), src = 'vivo-' + new Date().toISOString().slice(0, 10) + '-' + String(srcName || '').slice(0, 24);
+    for (const t of tracks) {
+      const d = t.last; if (!d || !d.f) continue;
+      if (d.ml) { drift.n++; if (d.ml.ood) drift.ood++; }
+      // 1) autoaprendizaje con pseudo-etiquetas de alta confianza (reglas y aprendizaje coinciden muchos cuadros)
+      if (CFG.ml.auto && !t.autoDone && status === 'activo' && t.hits >= AUTO.minHits) {
+        const [fl, share] = Tracker.fineLabel(t);
+        if (fl && fl !== 'indet' && share >= AUTO.minShare && t.agree / t.nEv >= AUTO.minAgree && (t.ood || 0) / t.nEv <= AUTO.maxOod && d.label === fl) {
+          t.autoDone = true;
+          addAuto(d, fl, cropFn(d), src, now);
+        }
+      }
+      // 2) cola de revisión: partículas dudosas seguidas varios cuadros
+      if (CFG.ml.queue && !t.queued && t.hits >= QUEUE.minHits && now - lastQ > QUEUE.gapMs && d.lengthUm >= 25) {
+        const doubtful = (t.doubt || 0) / t.nEv >= QUEUE.doubt || (t.ood || 0) / t.nEv >= QUEUE.ood || Tracker.group(t) === 'IND';
+        if (doubtful) {
+          t.queued = true; lastQ = now;
+          enqueue({ key: `${src}|t${t.id}|${Math.round(d.cx)}`, src, f: feats(d), thumb: cropFn(d).toDataURL('image/jpeg', 0.72), sugg: d.ml ? d.ml.label : d.label, prob: d.ml ? +d.ml.prob.toFixed(2) : 0, reason: reasonOf(d), lengthUm: Math.round(d.lengthUm) });
+        }
+      }
+    }
+    // deriva: si la mitad de lo que ve no se parece a lo aprendido, avisa una vez (cámara/luz/sitio nuevos)
+    if (!drift.warned && drift.n >= 150 && drift.ood / drift.n > 0.5) {
+      drift.warned = true;
+      U.toast('Este equipo o esta iluminación son nuevos para el modelo: la mitad de las partículas no se parece a lo aprendido. Etiquete algunas de la <b>cola de revisión</b> (pestaña Aprendizaje) para adaptarlo.', 'info', 12000);
+    }
+  }
+  async function addAuto(d, label, thumb, src, now) {
+    autoTimes = autoTimes.filter((t) => now - t < 60000);
+    if (autoTimes.length >= AUTO.perMin) return;
+    const H = human(), auto = ex.filter((e) => e.auto);
+    // balance por clase: nunca más automáticos que ejemplos humanos de esa clase (evita que una clase fácil domine)
+    const hc = H.filter((e) => e.label === label).length, ac = auto.filter((e) => e.label === label).length;
+    if (auto.length >= Math.min(AUTO.maxTotal, H.length * AUTO.maxFrac) || ac >= hc * AUTO.maxFrac + 1) return;
+    autoTimes.push(now);
+    const e = mkExample(d, label, thumb, src, { key: `${src}|auto|${Math.round(d.cx)}|${now}`, auto: true, w: AUTO.weight });
+    ex.push(e); await DB.put(e);
+    retrain();
+  }
+  async function resolveQueue(id, label) {
+    const q = queue.find((x) => x.id === id); if (!q) return;
+    queue = queue.filter((x) => x.id !== id); await DB.del(id, 'q');
+    if (label) { const e = { id: newId('e'), key: q.key, label, f: q.f, thumb: q.thumb, src: q.src, site: q.site || CFG.site || '', at: new Date().toISOString(), from: 'revision' }; ex.push(e); await DB.put(e); retrain(); }
+    else render();
+  }
+
   /* ---------------- modelo y validación ---------------- */
   let rt;
   function retrain() {
     clearTimeout(rt);
     rt = setTimeout(() => {
       const prevActive = !!activeModel();
-      const usable = ex.filter((e) => e.label !== 'indet');
+      const usable = ex.filter((e) => e.label !== 'indet' && PV.LABELS[e.label]);
+      const H = usable.filter((e) => !e.auto);
       model = usable.length >= 2 ? PV.mlFit(usable, CFG.ml.k) : null;
+      version++;
       val = validate(usable);
-      const sources = new Set(usable.map((e) => e.src)).size;
-      const perClass = {}; usable.forEach((e) => { (perClass[e.label] = perClass[e.label] || new Set()).add(e.src); });
+      const sources = new Set(H.map((e) => e.src)).size;
+      const perClass = {}; H.forEach((e) => { (perClass[e.label] = perClass[e.label] || new Set()).add(e.src); });
       single = Object.entries(perClass).filter(([, s]) => s.size < 2).map(([k]) => PV.LABELS[k].name);
-      if (!usable.length) status = 'vacio';
-      else if (usable.length < GATE.minN || sources < GATE.minSources || single.length || !val || !val.groups.has('ABR') || !val.groups.has('NOABR')) status = 'aprendiendo';
+      if (!H.length) status = 'vacio';
+      else if (H.length < GATE.minN || sources < GATE.minSources || single.length || !val || !val.groups.has('ABR') || !val.groups.has('NOABR')) status = 'aprendiendo';
       else if (val.groupAcc >= GATE.minGroupAcc && val.critRate <= GATE.maxCritical) status = 'activo';
       else status = 'no-validado';
       render();
       if (prevActive !== !!activeModel() || activeModel()) { if (An.state.img) An.analyze(); }
-    }, 150);
+    }, 250);
   }
+  // Validación honesta: se deja fuera cada foto (o grupo de fotos) y se predice con el resto.
+  // Solo se evalúa sobre ejemplos HUMANOS; los automáticos solo entrenan.
   function validate(data) {
-    const srcs = [...new Set(data.map((e) => e.src))];
-    if (data.length < 4) return null;
+    const H = data.filter((e) => !e.auto);
+    const srcs = [...new Set(H.map((e) => e.src))];
+    if (H.length < 4) return null;
     const G = ['ABR', 'NOABR', 'FIB', 'IGN'], conf = {}; G.forEach((a) => { conf[a] = {}; G.forEach((b) => (conf[a][b] = 0)); });
     let n = 0, okF = 0, okG = 0, crit = 0, abr = 0, fa = 0;
     const byPhoto = srcs.length >= 2;
-    const folds = byPhoto ? srcs.map((s) => [data.filter((e) => e.src !== s), data.filter((e) => e.src === s)]) : data.map((e, i) => [data.filter((_, j) => j !== i), [e]]);
+    let folds;
+    if (byPhoto) {
+      const K = Math.min(8, srcs.length), grp = new Map(srcs.map((s, i) => [s, i % K]));
+      folds = [...Array(K).keys()].map((f) => [data.filter((e) => grp.get(e.src) !== f), H.filter((e) => grp.get(e.src) === f)]);
+    } else {
+      const test = H.length > 120 ? H.filter((_, i) => i % Math.ceil(H.length / 120) === 0) : H;
+      folds = test.map((e) => [data.filter((x) => x !== e), [e]]);
+    }
+    const quick = { trees: folds.length > 20 ? 15 : 30 };
     for (const [tr, te] of folds) {
-      if (tr.length < 2) continue;
-      const m = PV.mlFit(tr, CFG.ml.k);
+      if (tr.length < 2 || !te.length) continue;
+      const m = PV.mlFit(tr, CFG.ml.k, quick);
       for (const e of te) {
         const pr = PV.mlPredict(m, e.f), tg = PV.LABELS[e.label].group;
         n++; if (pr.label === e.label) okF++; if (pr.group === tg) okG++;
@@ -2861,7 +3222,7 @@ const Learn = (() => {
       }
     }
     if (!n) return null;
-    return { n, byPhoto, fineAcc: okF / n, groupAcc: okG / n, crit, critRate: abr ? crit / abr : 0, fa, conf, groups: new Set(data.map((e) => PV.LABELS[e.label].group)) };
+    return { n, byPhoto, folds: folds.length, fineAcc: okF / n, groupAcc: okG / n, crit, critRate: abr ? crit / abr : 0, fa, conf, groups: new Set(H.map((e) => PV.LABELS[e.label].group)) };
   }
   function activeModel() { return status === 'activo' && CFG.ml.mode !== 'rules' ? model : null; }
   function effectiveMode() { return status === 'activo' ? CFG.ml.mode : 'rules'; }
@@ -2869,7 +3230,8 @@ const Learn = (() => {
     if (!model || p.userLabel) return '';
     const pr = PV.mlPredict(model, p), L = PV.LABELS[pr.label];
     if (pr.ood) return 'Aprendizaje: no hay ejemplos parecidos a esta partícula todavía.';
-    return `Aprendizaje: se parece a «${U.esc(L.name)}» (${U.fmt(pr.prob * 100)} %, ${pr.nearest.length} vecinos)${status === 'activo' && CFG.ml.mode !== 'rules' ? '' : ' · no se aplica: el modelo aún no está validado'}.`;
+    const alt = Object.entries(pr.probs || {}).filter(([k]) => k !== pr.label).sort((a, b) => b[1] - a[1])[0];
+    return `Aprendizaje: se parece a «${U.esc(L.name)}» (${U.fmt(pr.prob * 100)} %${alt && alt[1] >= 0.15 ? `; segunda opción ${U.esc(PV.LABELS[alt[0]].name)} ${U.fmt(alt[1] * 100)} %` : ''}; abrasiva ${U.fmt(((pr.groupProbs || {}).ABR || 0) * 100)} %)${status === 'activo' && CFG.ml.mode !== 'rules' ? '' : ' · no se aplica: el modelo aún no está validado'}.`;
   }
 
   /* ---------------- interfaz ---------------- */
@@ -2882,9 +3244,9 @@ const Learn = (() => {
   function render() {
     const [col, title, txt] = STATE_TXT[status];
     $('#mlState').innerHTML = `<i style="background:${col}"></i><span>${title}</span>`;
-    const usable = ex.filter((e) => e.label !== 'indet'), srcs = new Set(usable.map((e) => e.src)).size;
+    const usable = ex.filter((e) => e.label !== 'indet' && !e.auto), srcs = new Set(usable.map((e) => e.src)).size, nAuto = ex.filter((e) => e.auto).length;
     const m = (v, k, c) => `<div class="metric"><div class="v num" ${c ? `style="color:${c}"` : ''}>${v}</div><div class="k">${k}</div></div>`;
-    $('#mlMetrics').innerHTML = m(usable.length, 'ejemplos') + m(srcs, 'fotos distintas')
+    $('#mlMetrics').innerHTML = m(usable.length + (nAuto ? `<small style="font-size:14px;color:var(--mute)"> +${nAuto} auto</small>` : ''), 'ejemplos') + m(srcs, 'fotos distintas')
       + m(val ? U.fmt(val.groupAcc * 100) + ' %' : '—', 'aciertos (abrasiva / no)', val ? (val.groupAcc >= GATE.minGroupAcc ? 'var(--ok)' : 'var(--abr)') : '')
       + m(val ? U.fmt(val.critRate * 100, 1) + ' %' : '—', 'abrasivas tomadas por blandas', val ? (val.critRate <= GATE.maxCritical ? 'var(--ok)' : 'var(--abr)') : '');
     $('#mlValNote').textContent = txt + (status === 'aprendiendo' && single.length ? ` Clases con una sola foto (la validación no puede probarlas): ${single.join(', ')}.` : '') + (val && !val.byPhoto ? ' (Con una sola foto la validación es por partícula y resulta optimista.)' : '');
@@ -2898,23 +3260,63 @@ const Learn = (() => {
     // barras por clase
     const cls = Object.entries(PV.LABELS).filter(([k]) => k !== 'indet');
     $('#mlBars').innerHTML = cls.map(([k, L]) => {
-      const es = ex.filter((e) => e.label === k), n = es.length, s = new Set(es.map((e) => e.src)).size;
-      return `<div class="b"><span>${U.esc(L.name)}</span><span class="t"><i style="width:${Math.min(100, n / 20 * 100)}%;background:${COLORS[L.group]}"></i></span><span class="num" style="text-align:right">${n}<span class="mute"> · ${s} f.</span></span></div>`;
+      const es = ex.filter((e) => e.label === k && !e.auto), n = es.length, s = new Set(es.map((e) => e.src)).size, na = ex.filter((e) => e.label === k && e.auto).length;
+      return `<div class="b"><span>${U.esc(L.name)}</span><span class="t"><i style="width:${Math.min(100, n / 20 * 100)}%;background:${COLORS[L.group]}"></i></span><span class="num" style="text-align:right">${n}<span class="mute"> · ${s} f.${na ? ' · +' + na : ''}</span></span></div>`;
     }).join('');
     // galería
     $('#galFilter').innerHTML = '<option value="">Todas las clases</option>' + cls.map(([k, L]) => `<option value="${k}" ${filter === k ? 'selected' : ''}>${U.esc(L.name)}</option>`).join('');
     const list = ex.filter((e) => !filter || e.label === filter).slice(-400).reverse();
-    $('#gal').innerHTML = list.map((e) => `<figure data-id="${e.id}" class="${sel.has(e.id) ? 'sel' : ''}" title="${U.esc(e.src)}"><img src="${e.thumb}" alt=""><figcaption style="border-top:3px solid ${COLORS[PV.LABELS[e.label].group]}">${U.esc(PV.LABELS[e.label].name)}</figcaption></figure>`).join('') || '<p class="hint">Todavía no hay ejemplos. En «Analizar foto», elija una partícula y toque lo que realmente es.</p>';
+    $('#gal').innerHTML = list.map((e) => `<figure data-id="${e.id}" class="${sel.has(e.id) ? 'sel' : ''}" title="${U.esc(e.src)}${e.site ? ' · ' + U.esc(e.site) : ''}"><img src="${e.thumb}" alt="">${e.auto ? '<span class="auto">auto</span>' : ''}<figcaption style="border-top:3px solid ${COLORS[PV.LABELS[e.label].group]}">${U.esc(PV.LABELS[e.label].name)}</figcaption></figure>`).join('') || '<p class="hint">Todavía no hay ejemplos. En «Analizar foto», elija una partícula y toque lo que realmente es.</p>';
     $('#galSelBar').hidden = !sel.size; $('#galSelTxt').textContent = `${sel.size} seleccionado(s)`;
     $('#galRelabel').innerHTML = cls.map(([k, L]) => `<option value="${k}">${U.esc(L.name)}</option>`).join('');
+    $('#mlAuto').checked = !!CFG.ml.auto; $('#mlQueue').checked = !!CFG.ml.queue;
+    renderQueue(); renderImportance();
     // matriz de confusión
     if (!val) { $('#mlConf').innerHTML = '<p class="hint">Se calcula con al menos 4 ejemplos.</p>'; return; }
     const G = ['ABR', 'NOABR', 'FIB', 'IGN'].filter((g) => val.groups.has(g) || Object.values(val.conf).some((r) => r[g]));
     const max = Math.max(1, ...G.flatMap((a) => G.map((b) => val.conf[a][b])));
     $('#mlConf').innerHTML = `<table class="conf"><tr><th></th>${G.map((g) => `<th>dijo ${GROUP_TXT[g].toLowerCase()}</th>`).join('')}</tr>${G.map((a) => `<tr><th style="text-align:right">era ${GROUP_TXT[a].toLowerCase()}</th>${G.map((b) => { const v = val.conf[a][b], al = v / max; const c = a === b ? `rgba(39,201,122,${0.12 + al * 0.6})` : a === 'ABR' && b !== 'ABR' ? `rgba(255,74,61,${0.12 + al * 0.7})` : `rgba(140,153,168,${0.08 + al * 0.4})`; return `<td style="background:${c}">${v}</td>`; }).join('')}</tr>`).join('')}</table>
-      <p class="hint" style="margin-bottom:0">${val.n} predicciones ${val.byPhoto ? 'dejando fuera cada foto' : 'dejando fuera cada partícula'}. En rojo: abrasivas que habría tomado por otra cosa (el error peligroso). Clase exacta: ${U.fmt(val.fineAcc * 100)} %.</p>`;
+      <p class="hint" style="margin-bottom:0">${val.n} predicciones ${val.byPhoto ? `dejando fuera grupos de fotos (${val.folds} pliegues)` : 'dejando fuera cada partícula'}; solo ejemplos confirmados por personas. En rojo: abrasivas que habría tomado por otra cosa (el error peligroso). Clase exacta: ${U.fmt(val.fineAcc * 100)} %.</p>`;
+  }
+  function renderQueueBadge() {
+    const n = queue.length;
+    ['#qBadge', '#qBadge2'].forEach((q) => { const b = $(q); if (b) { b.hidden = !n; b.textContent = n > 99 ? '99+' : n; } });
+  }
+  function renderQueue() {
+    renderQueueBadge();
+    if (qSel && !queue.some((q) => q.id === qSel)) qSel = null;
+    $('#queue').innerHTML = queue.slice(0, 120).map((q) => {
+      const L = PV.LABELS[q.sugg];
+      return `<div class="qcard ${q.id === qSel ? 'sel' : ''}" data-q="${q.id}"><img src="${q.thumb}" alt=""><div class="qi"><b>${U.esc(q.reason || 'Revisar')}</b>${L ? 'Parece ' + U.esc(L.name) + (q.prob ? ' (' + U.fmt(q.prob * 100) + ' %)' : '') : ''}<br><span class="mute">${q.lengthUm ? U.fmt(q.lengthUm) + ' µm · ' : ''}${U.esc(String(q.src || '').slice(0, 28))}</span></div></div>`;
+    }).join('') || '<p class="hint">Sin pendientes. La cola se llena sola al analizar fotos y al usar el modo en vivo.</p>';
+    $('#qAct').hidden = !qSel;
+    if (qSel) $('#qLabels').innerHTML = Object.entries(PV.LABELS).filter(([k]) => k !== 'indet').map(([k, L]) => `<button data-ql="${k}" title="${U.esc(L.hint)}"><i style="background:${COLORS[L.group]}"></i>${U.esc(L.name)}</button>`).join('') + '<button data-ql="" style="opacity:.8">Descartar</button>';
+  }
+  const IMP_NAMES = { chromaX: 'Color (rojo↔verde)', chromaY: 'Color (amarillo↔azul)', sat: 'Saturación', relL: 'Luminosidad relativa', specSqrt: 'Reflexión especular', stdRel: 'Textura (σ)', q10: 'Zonas oscuras', q90: 'Zonas claras',
+    grad: 'Nitidez interna', chromaStd: 'Variación de color', wbX: 'Color corregido (r↔v)', wbY: 'Color corregido (am↔az)', maxRel: 'Destello máximo', edgeSharp: 'Nitidez del contorno', logElong: 'Elongación', solidity: 'Solidez', circ: 'Circularidad', convex: 'Convexidad', extent: 'Relleno de caja', darkFrac: 'Fracción oscura' };
+  function renderImportance() {
+    const el = $('#mlImp'); if (!el) return;
+    if (!model || !model.imp) { el.innerHTML = '<p class="hint" style="grid-column:1/-1">Aparece cuando haya ejemplos.</p>'; return; }
+    const rows = PV.ML_FEATS.map((f, j) => [f, model.imp[j] || 0]).sort((a, b) => b[1] - a[1]).slice(0, 10), mx = Math.max(1e-6, rows[0][1]);
+    el.innerHTML = rows.map(([f, v]) => `<span>${U.esc(IMP_NAMES[f] || f)}</span><span class="t"><i style="width:${(v / mx * 100).toFixed(0)}%"></i></span><span class="num" style="text-align:right">${U.fmt(v * 100)} %</span>`).join('');
   }
   function bind() {
+    $('#mlAuto').addEventListener('change', () => { CFG.ml.auto = $('#mlAuto').checked; Cfg.save(); });
+    $('#mlQueue').addEventListener('change', () => { CFG.ml.queue = $('#mlQueue').checked; Cfg.save(); });
+    $('#mlPurgeAuto').onclick = async () => {
+      const a = ex.filter((e) => e.auto); if (!a.length) return U.toast('No hay ejemplos automáticos.');
+      if (!(await U.confirm(`¿Quitar los <b>${a.length}</b> ejemplos aprendidos solos? Los suyos se conservan.`, 'Quitar', true))) return;
+      for (const e of a) await DB.del(e.id); ex = ex.filter((e) => !e.auto); retrain();
+    };
+    $('#queue').addEventListener('click', (e) => { const c = e.target.closest('[data-q]'); if (!c) return; qSel = qSel === c.dataset.q ? null : c.dataset.q; renderQueue(); if (qSel) $('#qAct').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
+    $('#qLabels').addEventListener('click', async (e) => {
+      const b = e.target.closest('[data-ql]'); if (!b || !qSel) return;
+      const id = qSel, idx = queue.findIndex((q) => q.id === id), next = queue[idx + 1] || queue[idx - 1];
+      qSel = next ? next.id : null; // pasa sola a la siguiente: etiquetar en ráfaga
+      await resolveQueue(id, b.dataset.ql);
+      if (b.dataset.ql) U.toast('Aprendido: ' + U.esc(PV.LABELS[b.dataset.ql].name), 'ok', 1500);
+    });
+    $('#qClear').onclick = async () => { if (!queue.length) return; if (!(await U.confirm(`¿Vaciar la cola (${queue.length})?`, 'Vaciar', true))) return; await DB.clear('q'); queue = []; qSel = null; render(); };
     $$('#mlMode button').forEach((b) => b.addEventListener('click', () => { if (b.disabled) return; CFG.ml.mode = b.dataset.m; Cfg.save(); render(); if (An.state.img) An.analyze(); }));
     $('#mlK').addEventListener('input', () => ($('#mlKTxt').textContent = $('#mlK').value));
     $('#mlK').addEventListener('change', () => { CFG.ml.k = Number($('#mlK').value); Cfg.save(); retrain(); });
@@ -2922,7 +3324,7 @@ const Learn = (() => {
     $('#gal').addEventListener('click', (e) => { const f = e.target.closest('figure'); if (!f) return; const id = f.dataset.id; sel.has(id) ? sel.delete(id) : sel.add(id); render(); });
     $('#galDel').onclick = async () => { if (!(await U.confirm(`¿Eliminar ${sel.size} ejemplo(s)?`, 'Eliminar', true))) return; for (const id of sel) await DB.del(id); ex = ex.filter((e) => !sel.has(e.id)); sel.clear(); retrain(); };
     $('#galRelabelBtn').onclick = async () => { const l = $('#galRelabel').value; for (const e of ex) if (sel.has(e.id)) { e.label = l; await DB.put(e); } sel.clear(); retrain(); U.toast('Clase actualizada', 'ok'); };
-    $('#mlExport').onclick = () => U.download(`ejemplos_particulas_${U.stamp()}.json`, new Blob([JSON.stringify({ app: 'pv-c175', version: APP_VERSION, examples: ex }, null, 1)], { type: 'application/json' }));
+    $('#mlExport').onclick = () => U.download(`ejemplos_particulas_${U.stamp()}.json`, new Blob([JSON.stringify({ app: 'pv-c175', version: APP_VERSION, site: CFG.site || '', features: PV.FEAT_KEYS, examples: ex }, null, 1)], { type: 'application/json' }));
     $('#mlImport').onclick = () => $('#mlImportIn').click();
     $('#mlImportIn').addEventListener('change', async (e) => {
       const f = e.target.files[0]; e.target.value = ''; if (!f) return;
@@ -2939,7 +3341,7 @@ const Learn = (() => {
       U.toast('App descargada con los ejemplos incluidos. Ábrala en otro equipo y los cargará sola.', 'ok', 6000);
     };
   }
-  return { load, bind, render, addFromParticle, addMany, removeFor, activeModel, effectiveMode, suggest, get examples() { return ex; }, get status() { return status; } };
+  return { load, bind, render, addFromParticle, addMany, removeFor, activeModel, effectiveMode, suggest, observeLive, observePhoto, renderQueueBadge, get examples() { return ex; }, get status() { return status; }, get version() { return version; } };
 })();
 
 /* =====================================================================
@@ -2969,7 +3371,7 @@ const App = (() => {
   }
   function openSettings() {
     renderProfiles();
-    $('#sMinUm').value = CFG.minDetectUm; $('#sMaxPx').value = String(CFG.maxPx); $('#sRed').checked = CFG.removeRed;
+    $('#sMinUm').value = CFG.minDetectUm; $('#sSite').value = CFG.site || ''; $('#sMaxPx').value = String(CFG.maxPx); $('#sRed').checked = CFG.removeRed;
     U.modal('mdlSettings');
   }
   function onScaleChanged() { renderProfiles(); An.updateScale(); if (An.state.img) An.analyze(); Live.onScale(); }
@@ -3044,7 +3446,7 @@ const App = (() => {
       Cfg.save(); renderProfiles();
     };
     $('#btnSaveSettings').onclick = () => {
-      CFG.minDetectUm = Math.max(5, Number($('#sMinUm').value) || 25); CFG.maxPx = Number($('#sMaxPx').value) || 1600; CFG.removeRed = $('#sRed').checked;
+      CFG.minDetectUm = Math.max(5, Number($('#sMinUm').value) || 25); CFG.maxPx = Number($('#sMaxPx').value) || 1600; CFG.removeRed = $('#sRed').checked; CFG.site = $('#sSite').value.trim().slice(0, 60);
       Cfg.save(); U.modal('mdlSettings', false); U.toast('Ajustes guardados', 'ok'); if (An.state.img) An.analyze();
     };
     window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; });

@@ -22,6 +22,8 @@ const perms = [
 if (perms.length) x = x.replace('</manifest>', '    ' + perms.join('\n    ') + '\n</manifest>');
 const svc = '<service android:name=".ScreenCaptureService" android:exported="false" android:foregroundServiceType="mediaProjection" />';
 if (!x.includes('ScreenCaptureService')) x = x.replace('</application>', '        ' + svc + '\n    </application>');
+// Cámaras WiFi de estereoscopio: sirven imágenes por HTTP simple dentro de su propia red (sin internet)
+if (!x.includes('usesCleartextTraffic')) x = x.replace('<application', '<application android:usesCleartextTraffic="true"');
 writeFileSync(mf, x);
 
 /* ---------- MainActivity: registra el complemento ---------- */
