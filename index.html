@@ -1899,7 +1899,7 @@ onmessage = (e) => {
  * ===================================================================== */
 // Copia íntegra del documento ANTES de que el script lo modifique: permite
 // descargar la app (con los ejemplos de aprendizaje incluidos) desde cualquier copia.
-const APP_VERSION = '2.5.2';
+const APP_VERSION = '2.5.3';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
@@ -3160,7 +3160,9 @@ const Live = (() => {
       if (t.hits < 3) continue;
       const g = Tracker.group(t);
       if (g === 'FIB' || g === 'IGN') continue;
-      if ((g === 'ABR' || g === 'IND') ? t.maxL > lim : t.maxL >= 100) sweep.add('t' + t.id, g, t.maxL, t.tipo);
+      // nombre coherente con el grupo votado: la clase fina más votada DENTRO de ese grupo
+      let fine = '', fn = -1; for (const [l, v] of Object.entries(t.fine || {})) { const L = PV.LABELS[l]; if (L && L.group === g && v > fn) { fn = v; fine = L.name; } }
+      if ((g === 'ABR' || g === 'IND') ? t.maxL > lim : t.maxL >= 100) sweep.add('t' + t.id, g, t.maxL, fine || GROUP_TXT[g]);
     }
   }
   function drawBoxes() {
