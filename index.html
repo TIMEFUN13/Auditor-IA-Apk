@@ -1359,11 +1359,13 @@ function PVFactory() {
       trees.push(growTree(X, yi, wt, boot, nC, d, o, R, imp));
     }
     const it = imp.reduce((a, b) => a + b, 0) || 1;
-    const Z = X.map((x) => KNN_IDX.map((j) => (isNaN(x[j]) ? 0 : (x[j] - mu[j]) / sd[j])));
+    // k-NN y «fuera de dominio»: solo ejemplos reales (las variaciones son para el bosque)
+    const real = ex.map((e, i) => i).filter((i) => !ex[i].augRow);
+    const Z = real.map((i) => KNN_IDX.map((j) => (isNaN(X[i][j]) ? 0 : (X[i][j] - mu[j]) / sd[j])));
     const kd = (a, b) => { let s = 0; for (let j = 0; j < a.length; j++) { const q = a[j] - b[j]; s += q * q; } return Math.sqrt(s); };
     const sample = Z.length > 600 ? Z.filter((_, i) => i % Math.ceil(Z.length / 600) === 0) : Z;
     const nn = sample.map((a) => { let m = Infinity; for (const b of Z) { if (a !== b) { const q = kd(a, b); if (q < m) m = q; } } return m; }).sort((a, b) => a - b);
-    return { v: 2, classes, trees, Z, y: ex.map((e) => e.label), w: ex.map((e) => (e.w != null ? e.w : 1)), mu, sd, k: k || 5, medNN: nn[Math.floor(nn.length / 2)] || 1, nn95: nn[Math.floor(nn.length * 0.95)] || 1, n,
+    return { v: 2, classes, trees, Z, y: real.map((i) => ex[i].label), w: real.map((i) => (ex[i].w != null ? ex[i].w : 1)), mu, sd, k: k || 5, medNN: nn[Math.floor(nn.length / 2)] || 1, nn95: nn[Math.floor(nn.length * 0.95)] || 1, n,
       imp: imp.map((v) => +(v / it).toFixed(4)) };
   }
   function dist(a, b) { let s = 0; for (let j = 0; j < a.length; j++) { const t = a[j] - b[j]; s += t * t; } return Math.sqrt(s); }
@@ -1696,7 +1698,71 @@ function PVFactory() {
     };
   }
 
-  return { analyze, verdict, classify, ruleClassify, explain, fuse, mlFit, mlPredict, mlVector, ML_FEATS, FEAT_KEYS, LABELS, FEATURES, RULES, FALLBACK, DEFAULTS, CRIT, rgb2hsv, labelCC, convexHull, caliper };
+  /* ============ variaciones realistas de un ejemplo REAL (aumento de datos) ============
+   * No se inventan partículas: se toma la miniatura real de cada ejemplo y se simula cómo se
+   * vería con otra cámara u otra iluminación (más o menos exposición, luz cálida o fría, leve
+   * desenfoque, colores más apagados con ruido). Se mide cuánto cambia cada variable en la
+   * miniatura y ese CAMBIO se aplica a las variables originales del ejemplo. Así el bosque aprende
+   * qué variables son estables entre equipos (relativas, balance de blancos) y cuáles no. */
+  const AUGS = [
+    { id: 'expo+', g: [1.22, 1.22, 1.22], gamma: 0.92 },
+    { id: 'expo-', g: [0.78, 0.78, 0.78], gamma: 1.08 },
+    { id: 'calida', g: [1.10, 1.0, 0.82] },
+    { id: 'fria', g: [0.88, 0.98, 1.12] },
+    { id: 'desenfoque', blur: 1 },
+    { id: 'apagada', desat: 0.3, noise: 7 },
+  ];
+  // variables que se corrigen con la diferencia medida (no las de tamaño: la miniatura no tiene escala)
+  const AUG_KEYS = ['hue', 'sat', 'relL', 'spec', 'stdRel', 'darkFrac', 'q10', 'q90', 'grad', 'chromaStd', 'wbHue', 'wbSat', 'maxRel', 'edgeSharp', 'circ', 'convex', 'solidity', 'elong'];
+  const HUE_KEYS = { hue: 1, wbHue: 1 };
+  function transformImage(img, t, seed) {
+    const w = img.width, h = img.height, s = img.data, d = new Uint8ClampedArray(s.length), R = rng(seed);
+    for (let i = 0; i < s.length; i += 4) {
+      let r = s[i], g = s[i + 1], b = s[i + 2];
+      if (t.g) { r *= t.g[0]; g *= t.g[1]; b *= t.g[2]; }
+      if (t.gamma) { r = 255 * Math.pow(Math.max(0, r) / 255, t.gamma); g = 255 * Math.pow(Math.max(0, g) / 255, t.gamma); b = 255 * Math.pow(Math.max(0, b) / 255, t.gamma); }
+      if (t.desat) { const l = 0.299 * r + 0.587 * g + 0.114 * b; r += (l - r) * t.desat; g += (l - g) * t.desat; b += (l - b) * t.desat; }
+      if (t.noise) { const n = (R() - 0.5) * 2 * t.noise; r += n; g += n; b += n; }
+      d[i] = r; d[i + 1] = g; d[i + 2] = b; d[i + 3] = 255;
+    }
+    if (t.blur) {
+      const o = new Uint8ClampedArray(d);
+      for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) for (let c = 0; c < 3; c++) {
+        let a = 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) a += o[((y + dy) * w + x + dx) * 4 + c];
+        d[(y * w + x) * 4 + c] = a / 9;
+      }
+    }
+    return { width: w, height: h, data: d };
+  }
+  function centerParticle(img) {
+    const r = analyze(img, { umPerPx: 1, removeRed: false, minAreaPx: 6, smooth: false, bgRadiusFrac: 0.2, autoRoi: false });
+    const cx = img.width / 2, cy = img.height / 2;
+    let best = null, bd = Infinity;
+    for (const p of r.particles) { const dd = Math.hypot(p.cx - cx, p.cy - cy); if (dd < bd) { bd = dd; best = p; } }
+    return best && bd < img.width * 0.3 ? best : null;
+  }
+  // img: miniatura (ImageData 64×64 del ejemplo) · f: variables originales → lista de variaciones
+  function augmentFeatures(img, f) {
+    const p0 = centerParticle(img); if (!p0) return [];
+    const out = [];
+    AUGS.forEach((t, k) => {
+      const pj = centerParticle(transformImage(img, t, 97 + k)); if (!pj) return;
+      const g = Object.assign({}, f);
+      for (const key of AUG_KEYS) {
+        if (f[key] == null || !isFinite(f[key]) || !isFinite(pj[key]) || !isFinite(p0[key])) continue;
+        let dlt = pj[key] - p0[key];
+        if (HUE_KEYS[key]) { dlt = ((dlt + 540) % 360) - 180; g[key] = (f[key] + dlt + 360) % 360; continue; }
+        g[key] = Math.max(0, f[key] + dlt);
+      }
+      ['sat', 'wbSat', 'spec', 'darkFrac', 'circ', 'convex', 'solidity'].forEach((key) => { if (g[key] > 1) g[key] = 1; });
+      if (g.elong < 1) g.elong = 1;
+      Object.keys(g).forEach((key) => { if (typeof g[key] === 'number') g[key] = +g[key].toFixed(4); });
+      out.push(g);
+    });
+    return out;
+  }
+
+  return { analyze, verdict, classify, ruleClassify, explain, fuse, mlFit, mlPredict, mlVector, augmentFeatures, ML_FEATS, FEAT_KEYS, LABELS, FEATURES, RULES, FALLBACK, DEFAULTS, CRIT, rgb2hsv, labelCC, convexHull, caliper };
 }
 const PV = PVFactory();
 if (typeof module !== 'undefined') module.exports = PV;
@@ -1812,7 +1878,7 @@ onmessage = (e) => {
  * ===================================================================== */
 // Copia íntegra del documento ANTES de que el script lo modifique: permite
 // descargar la app (con los ejemplos de aprendizaje incluidos) desde cualquier copia.
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.4.0';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
@@ -3370,6 +3436,44 @@ const Learn = (() => {
   // tras etiquetar, sincroniza al minuto (agrupa varias etiquetas en un solo envío)
   const syncSoon = () => { clearTimeout(syncTimer); syncTimer = setTimeout(() => sync(false), 60000); };
 
+  /* ---------------- variaciones realistas (aumento de datos) ----------------
+   * Cada ejemplo con miniatura recibe 6 variaciones (exposición, luz cálida/fría, desenfoque,
+   * colores apagados). Se calculan en segundo plano, de a pocas, y se guardan con el ejemplo. */
+  const AUG_V = 1, AUG_W = 0.4;
+  let augBusy = false, augTimer = 0;
+  const thumbData = (src) => new Promise((res) => {
+    const im = new Image();
+    im.onload = () => { try { const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(im, 0, 0); res(x.getImageData(0, 0, c.width, c.height)); } catch (e) { res(null); } };
+    im.onerror = () => res(null); im.src = src;
+  });
+  function scheduleAug() { clearTimeout(augTimer); augTimer = setTimeout(runAug, 1500); }
+  async function runAug() {
+    if (augBusy) return; augBusy = true;
+    let done = 0;
+    try {
+      const todo = ex.filter((e) => !e.auto && e.thumb && /^data:image/.test(e.thumb) && e.augV !== AUG_V);
+      for (const e of todo) {
+        const img = await thumbData(e.thumb);
+        e.aug = img ? PV.augmentFeatures(img, e.f) : []; e.augV = AUG_V;
+        await DB.put(e); done++;
+        if (done % 5 === 0) await new Promise((r) => setTimeout(r, 30)); // no trabar la interfaz
+      }
+    } catch (err) { console.warn('variaciones', err); }
+    finally { augBusy = false; }
+    if (done) retrain();
+  }
+  // filas de entrenamiento: ejemplos + sus variaciones (peso menor); maxPer limita para la validación
+  function expand(list, maxPer) {
+    const out = list.slice();
+    for (const e of list) {
+      if (e.auto || !e.aug || !e.aug.length) continue;
+      const a = maxPer != null ? e.aug.slice(0, maxPer) : e.aug;
+      for (const g of a) out.push({ label: e.label, f: g, src: e.src, w: (e.w != null ? e.w : 1) * AUG_W, augRow: true });
+    }
+    return out;
+  }
+  const sinAug = (e) => { const c = Object.assign({}, e); delete c.aug; delete c.augV; return c; };
+
   /* ---------------- modelo y validación ---------------- */
   let rt;
   function retrain() {
@@ -3378,7 +3482,8 @@ const Learn = (() => {
       const prevActive = !!activeModel();
       const usable = ex.filter((e) => e.label !== 'indet' && PV.LABELS[e.label]);
       const H = usable.filter((e) => !e.auto);
-      model = usable.length >= 2 ? PV.mlFit(usable, CFG.ml.k) : null;
+      model = usable.length >= 2 ? PV.mlFit(expand(usable), CFG.ml.k) : null;
+      if (ex.some((e) => !e.auto && e.thumb && e.augV !== AUG_V)) scheduleAug();
       if (ex.some((e) => !e.auto && !e.remote && !e.synced)) syncSoon();
       version++;
       val = validate(usable);
@@ -3413,7 +3518,7 @@ const Learn = (() => {
     const quick = { trees: folds.length > 20 ? 15 : 30 };
     for (const [tr, te] of folds) {
       if (tr.length < 2 || !te.length) continue;
-      const m = PV.mlFit(tr, CFG.ml.k, quick);
+      const m = PV.mlFit(expand(tr, 2), CFG.ml.k, quick);
       for (const e of te) {
         const pr = PV.mlPredict(m, e.f), tg = PV.LABELS[e.label].group;
         n++; if (pr.label === e.label) okF++; if (pr.group === tg) okG++;
@@ -3447,7 +3552,7 @@ const Learn = (() => {
     $('#mlState').innerHTML = `<i style="background:${col}"></i><span>${title}</span>`;
     const usable = ex.filter((e) => e.label !== 'indet' && !e.auto), srcs = new Set(usable.map((e) => e.src)).size, nAuto = ex.filter((e) => e.auto).length;
     const m = (v, k, c) => `<div class="metric"><div class="v num" ${c ? `style="color:${c}"` : ''}>${v}</div><div class="k">${k}</div></div>`;
-    $('#mlMetrics').innerHTML = m(usable.length + (nAuto ? `<small style="font-size:14px;color:var(--mute)"> +${nAuto} auto</small>` : ''), 'ejemplos') + m(srcs, 'fotos distintas')
+    $('#mlMetrics').innerHTML = m(usable.length + (nAuto ? `<small style="font-size:14px;color:var(--mute)"> +${nAuto} auto</small>` : ''), 'ejemplos') + m(srcs, 'fotos distintas' + (ex.some((e) => e.aug && e.aug.length) ? ` · ${ex.reduce((a, e) => a + (e.aug ? e.aug.length : 0), 0)} variaciones` : ''))
       + m(val ? U.fmt(val.groupAcc * 100) + ' %' : '—', 'aciertos (abrasiva / no)', val ? (val.groupAcc >= GATE.minGroupAcc ? 'var(--ok)' : 'var(--abr)') : '')
       + m(val ? U.fmt(val.critRate * 100, 1) + ' %' : '—', 'abrasivas tomadas por blandas', val ? (val.critRate <= GATE.maxCritical ? 'var(--ok)' : 'var(--abr)') : '');
     $('#mlValNote').textContent = txt + (status === 'aprendiendo' && single.length ? ` Clases con una sola foto (la validación no puede probarlas): ${single.join(', ')}.` : '') + (val && !val.byPhoto ? ' (Con una sola foto la validación es por partícula y resulta optimista.)' : '');
@@ -3507,7 +3612,7 @@ const Learn = (() => {
       const own = ex.filter((e) => !e.auto && !e.remote && e.label !== 'indet');
       if (!own.length) return U.toast('Todavía no hay ejemplos confirmados en esta tablet.', 'info');
       const site = (CFG.site || 'sitio').replace(/[^\w-]+/g, '_').slice(0, 30);
-      U.download(`ejemplos_${site}_${U.stamp()}.json`, new Blob([JSON.stringify({ app: 'pv-c175', version: APP_VERSION, site: CFG.site || '', features: PV.FEAT_KEYS, examples: own })], { type: 'application/json' }));
+      U.download(`ejemplos_${site}_${U.stamp()}.json`, new Blob([JSON.stringify({ app: 'pv-c175', version: APP_VERSION, site: CFG.site || '', features: PV.FEAT_KEYS, examples: own.map(sinAug) })], { type: 'application/json' }));
       if (!CFG.site) U.toast('Consejo: escriba el sitio y equipo en Ajustes para identificar de dónde viene cada ejemplo.', 'info', 7000);
     };
     window.addEventListener('online', () => setTimeout(() => sync(false), 3000));
@@ -3535,7 +3640,7 @@ const Learn = (() => {
     $('#gal').addEventListener('click', (e) => { const f = e.target.closest('figure'); if (!f) return; const id = f.dataset.id; sel.has(id) ? sel.delete(id) : sel.add(id); render(); });
     $('#galDel').onclick = async () => { if (!(await U.confirm(`¿Eliminar ${sel.size} ejemplo(s)?`, 'Eliminar', true))) return; for (const id of sel) await DB.del(id); ex = ex.filter((e) => !sel.has(e.id)); sel.clear(); retrain(); };
     $('#galRelabelBtn').onclick = async () => { const l = $('#galRelabel').value; for (const e of ex) if (sel.has(e.id)) { e.label = l; e.synced = false; e.remote = false; await DB.put(e); } sel.clear(); retrain(); U.toast('Clase actualizada', 'ok'); };
-    $('#mlExport').onclick = () => U.download(`ejemplos_particulas_${U.stamp()}.json`, new Blob([JSON.stringify({ app: 'pv-c175', version: APP_VERSION, site: CFG.site || '', features: PV.FEAT_KEYS, examples: ex }, null, 1)], { type: 'application/json' }));
+    $('#mlExport').onclick = () => U.download(`ejemplos_particulas_${U.stamp()}.json`, new Blob([JSON.stringify({ app: 'pv-c175', version: APP_VERSION, site: CFG.site || '', features: PV.FEAT_KEYS, examples: ex.map(sinAug) }, null, 1)], { type: 'application/json' }));
     $('#mlImport').onclick = () => $('#mlImportIn').click();
     $('#mlImportIn').addEventListener('change', async (e) => {
       const f = e.target.files[0]; e.target.value = ''; if (!f) return;
@@ -3548,7 +3653,7 @@ const Learn = (() => {
     });
     $('#mlClear').onclick = async () => { if (!(await U.confirm(`¿Borrar los <b>${ex.length}</b> ejemplos de este navegador? Exporte antes si los necesita.`, 'Borrar todo', true))) return; await DB.clear(); ex = []; sel.clear(); retrain(); };
     $('#mlDlApp').onclick = () => {
-      U.download(`identificador-particulas-c175${ex.length ? '-con-' + ex.length + '-ejemplos' : ''}.html`, new Blob([Pack.html(ex)], { type: 'text/html' }));
+      U.download(`identificador-particulas-c175${ex.length ? '-con-' + ex.length + '-ejemplos' : ''}.html`, new Blob([Pack.html(ex.map(sinAug))], { type: "text/html" }));
       U.toast('App descargada con los ejemplos incluidos. Ábrala en otro equipo y los cargará sola.', 'ok', 6000);
     };
   }

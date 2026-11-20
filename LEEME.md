@@ -18,6 +18,16 @@ La app va completa dentro del APK: no necesita internet ni servidor.
 Reemplace `www/index.html` por la versión nueva (por ejemplo, la app descargada con sus ejemplos de
 aprendizaje desde la pestaña «Aprendizaje») y súbalo: GitHub compila un APK nuevo. Instálelo encima del anterior.
 
+## Novedades 2.4 · variaciones realistas de los ejemplos reales
+- Cada ejemplo confirmado recibe solo, en segundo plano, **6 variaciones**: más y menos exposición, luz cálida,
+  luz fría, leve desenfoque y colores apagados con ruido. Se calculan desde la miniatura REAL del ejemplo:
+  no se inventan partículas.
+- El bosque aleatorio aprende con ellas (pesan 40 % de un ejemplo real); el comparador de vecinos y la
+  validación usan solo ejemplos reales, así las métricas siguen siendo honestas.
+- Prueba con otra cámara simulada (desenfoque, otro gamma, colores apagados, 3 repeticiones): acierto de
+  60 → 74 %, 43 → 63 % y 58 → 71 %. No redujo las abrasivas perdidas en esa prueba: para eso sigue
+  haciendo falta la biblioteca de referencia propia y la política conservadora («sondear»).
+
 ## Actualizar sin desinstalar (desde la versión 2.2.1)
 Hasta la 2.2.0 cada APK salía firmado con una llave distinta y Android respondía «No se instaló la app»;
 había que desinstalar y se perdía lo aprendido. Desde la 2.2.1 todas las versiones usan la llave fija de
