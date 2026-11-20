@@ -1899,7 +1899,7 @@ onmessage = (e) => {
  * ===================================================================== */
 // Copia íntegra del documento ANTES de que el script lo modifique: permite
 // descargar la app (con los ejemplos de aprendizaje incluidos) desde cualquier copia.
-const APP_VERSION = '2.5.1';
+const APP_VERSION = '2.5.2';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
@@ -3119,10 +3119,12 @@ const Live = (() => {
       tracker.predict(null);
       const paused = mode === 'video' && v.paused;
       if (!Det.busy && !paused && (Det.async || frameN % every === 0)) {
-        const pw = Number($('#liveRes').value), ph = Math.round(H * pw / W), kk = W / pw;
+        // solo la imagen de la cámara (sin las franjas negras del lienzo): el borde entre imagen y
+        // franja se detectaba como una «partícula» gigante
+        const pw = Number($('#liveRes').value), ph = Math.max(2, Math.round(pw * vh / vw)), kk = dw / pw;
         if (proc.width !== pw || proc.height !== ph) { proc.width = pw; proc.height = ph; }
-        pctx.drawImage(cv, 0, 0, pw, ph);
-        const meta = { k: kk, mode, t0: performance.now() };
+        pctx.drawImage(v, 0, 0, pw, ph);
+        const meta = { k: kk, ox: geom.ox, oy: geom.oy, mode, t0: performance.now() };
         Det.run(pctx.getImageData(0, 0, pw, ph), {
           umPerPx: umScreen() * kk, sens: Number($('#liveSens').value), removeRed: $('#camRed').checked, removeBlue: false,
           autoRoi: $('#camRoi').checked, smooth: false, minAreaPx: 4, bgRadiusFrac: 0.09, bgPasses: 1, fastBg: true, openR: 0, growPx: 1,
@@ -3139,8 +3141,8 @@ const Live = (() => {
   }
   function onDetections(r, meta) {
     if (meta.mode !== mode || tool.frozen) return;
-    const k = meta.k;
-    const dets = r.parts.filter((p) => p.lengthUm >= 20).map((p) => ({ x: p.x * k, y: p.y * k, w: p.w * k, h: p.h * k, cx: p.cx * k, cy: p.cy * k, lengthUm: p.lengthUm, widthUm: p.widthUm, areaUm2: p.areaUm2, group: p.group, tipo: p.tipo,
+    const k = meta.k, ox = meta.ox || 0, oy = meta.oy || 0;
+    const dets = r.parts.filter((p) => p.lengthUm >= 20).map((p) => ({ x: ox + p.x * k, y: oy + p.y * k, w: p.w * k, h: p.h * k, cx: ox + p.cx * k, cy: oy + p.cy * k, lengthUm: p.lengthUm, widthUm: p.widthUm, areaUm2: p.areaUm2, group: p.group, tipo: p.tipo,
       label: p.label, source: p.source, ruleGroup: p.ruleGroup, ml: p.ml, f: p.f, px: [p.x, p.y, p.w, p.h] }));
     tracker.match(dets);
     // autoaprendizaje: la imagen analizada sigue en «proc» (no se redibuja mientras el detector trabaja)
