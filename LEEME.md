@@ -18,6 +18,20 @@ La app va completa dentro del APK: no necesita internet ni servidor.
 Reemplace `www/index.html` por la versión nueva (por ejemplo, la app descargada con sus ejemplos de
 aprendizaje desde la pestaña «Aprendizaje») y súbalo: GitHub compila un APK nuevo. Instálelo encima del anterior.
 
+## Novedades 2.5 · escala por aumento del estereoscopio Motic y cuadrícula
+Aumento en la cámara = **adaptador × objetivo auxiliar × zoom** (por ejemplo 0,45 × 2 × 2 = 1,8×). El tamaño
+de un píxel en µm es inversamente proporcional a ese aumento: con UNA calibración sobre un micrómetro de
+platina la app conoce la constante de la cámara y la escala se recalcula sola para cualquier zoom.
+1. **Ajustes → Óptica del estereoscopio**: active «Calcular la escala con el aumento» y revise adaptador (0,45),
+   objetivo (2) y ocular (10).
+2. Ponga cualquier zoom, escríbalo en el control **Zoom** y pulse **Calibrar** sobre el micrómetro (por ejemplo
+   1 000 µm). Listo para todos los zooms.
+3. Al cambiar la perilla, escriba el **valor exacto** en «Zoom» (en Analizar o En vivo). La **cuadrícula** (40 µm
+   por defecto, configurable) se agranda o achica sola.
+- **No redondear al preset de MotiConnect**: 1,8× (18× visual) tomado como «x20» mide 11 % más chico; una
+  partícula real de 44 µm se leería ≈ 40 µm y pasaría. La app muestra ese error cuando aplica.
+- Si la perilla no tiene topes, use siempre las mismas posiciones marcadas.
+
 ## Novedades 2.4 · variaciones realistas de los ejemplos reales
 - Cada ejemplo confirmado recibe solo, en segundo plano, **6 variaciones**: más y menos exposición, luz cálida,
   luz fría, leve desenfoque y colores apagados con ruido. Se calculan desde la miniatura REAL del ejemplo:

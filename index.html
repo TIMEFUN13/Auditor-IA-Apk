@@ -451,6 +451,12 @@ td.n{text-align:right;font:600 14px var(--display)}
               <span><i style="border-color:var(--fib);border-style:dashed"></i>Fibra o ≤ 40 µm</span>
             </div>
             <div class="grow"></div>
+            <span class="optbar" data-optbar="an">
+              <label class="chk" title="Posición de la perilla de zoom del estereoscopio (valor exacto, sin redondear)">Zoom <input type="number" class="optZoom" min="0.5" max="10" step="0.05" list="zoomStops" inputmode="decimal" style="width:74px;min-height:32px;padding:3px 6px"></label>
+              <span class="hint optMag" style="margin:0"></span>
+              <label class="chk"><input type="checkbox" class="optGrid"> Cuadrícula</label>
+              <label class="chk"><input type="number" class="optGridUm" min="5" max="2000" step="5" inputmode="numeric" style="width:64px;min-height:32px;padding:3px 6px"> µm</label>
+            </span>
             <label class="chk" title="Sensibilidad de detección">Sensibilidad <input type="range" id="sens" min="0.5" max="1.8" step="0.05" value="1"><b class="num" id="sensTxt">1.00</b></label>
             <label class="chk"><input type="checkbox" id="tSmall"> Ver todas</label>
             <label class="chk"><input type="checkbox" id="tOrig"> Foto original</label>
@@ -551,6 +557,12 @@ td.n{text-align:right;font:600 14px var(--display)}
             <button class="btn" id="btnLiveCal">Calibrar en vivo</button>
             <button class="btn" id="btnLiveMeasure">Medir</button>
             <div class="grow"></div>
+            <span class="optbar" data-optbar="lv">
+              <label class="chk" title="Posición de la perilla de zoom del estereoscopio (valor exacto, sin redondear)">Zoom <input type="number" class="optZoom" min="0.5" max="10" step="0.05" list="zoomStops" inputmode="decimal" style="width:74px;min-height:32px;padding:3px 6px"></label>
+              <span class="hint optMag" style="margin:0"></span>
+              <label class="chk"><input type="checkbox" class="optGrid"> Cuadrícula</label>
+              <label class="chk"><input type="number" class="optGridUm" min="5" max="2000" step="5" inputmode="numeric" style="width:64px;min-height:32px;padding:3px 6px"> µm</label>
+            </span>
             <label class="chk"><input type="checkbox" id="camRoi" checked> Recortar bordes negros</label>
             <label class="chk"><input type="checkbox" id="camRed" checked> Ignorar trazos rojos</label>
             <label class="chk">Resolución <select id="liveRes" style="width:auto;min-height:32px;padding:3px 28px 3px 8px"><option value="320">320</option><option value="480" selected>480</option><option value="640">640</option></select></label>
@@ -752,6 +764,15 @@ td.n{text-align:right;font:600 14px var(--display)}
     <div class="field" style="width:110px"><label>Ancho ref.</label><input type="number" id="pfW" step="1" min="0" inputmode="numeric"></div>
     <button class="btn" id="pfAdd" style="margin-top:12px">Añadir</button>
   </div>
+  <h4 style="margin:14px 0 6px;font:600 16px var(--display)">Óptica del estereoscopio (Motic)</h4>
+  <label class="chk"><input type="checkbox" id="oOn"> Calcular la escala con el aumento (adaptador × objetivo × zoom)</label>
+  <div class="row">
+    <div class="field" style="width:130px"><label for="oAdapter">Adaptador de cámara</label><input type="number" id="oAdapter" step="0.01" min="0.1" inputmode="decimal"></div>
+    <div class="field" style="width:130px"><label for="oObjective">Objetivo auxiliar</label><input type="number" id="oObjective" step="0.1" min="0.1" inputmode="decimal"></div>
+    <div class="field" style="width:110px"><label for="oEyepiece">Ocular</label><input type="number" id="oEyepiece" step="1" min="1" inputmode="decimal"></div>
+  </div>
+  <p class="hint" id="oInfo" style="margin-top:4px"></p>
+  <div class="row"><button class="btn sm" id="oForget">Olvidar la calibración óptica</button></div>
   <h4 style="margin:14px 0 6px;font:600 16px var(--display)">Detección</h4>
   <div class="row">
     <div class="field grow"><label>Tamaño mínimo a mostrar (µm)</label><input type="number" id="sMinUm" min="5" step="1"></div>
@@ -778,6 +799,7 @@ td.n{text-align:right;font:600 14px var(--display)}
   <div id="offBody"></div>
 </div></div>
 
+<datalist id="zoomStops"><option value="0.75"><option value="1"><option value="1.5"><option value="2"><option value="2.5"><option value="3"><option value="3.5"><option value="4"><option value="4.5"></datalist>
 <div class="toasts" id="toasts"></div>
 <script type="application/json" id="pv-data">{"examples":[]}</script>
 <script>
@@ -1878,7 +1900,7 @@ onmessage = (e) => {
  * ===================================================================== */
 // Copia íntegra del documento ANTES de que el script lo modifique: permite
 // descargar la app (con los ejemplos de aprendizaje incluidos) desde cualquier copia.
-const APP_VERSION = '2.4.0';
+const APP_VERSION = '2.5.0';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
@@ -1999,17 +2021,23 @@ const DEFAULT_CFG = () => ({
 let CFG = Object.assign(DEFAULT_CFG(), Store.get('cfg', {}));
 CFG.crit = Object.assign({}, PV.CRIT, CFG.crit || {});
 CFG.ml = Object.assign({ mode: 'conservador', k: 5, auto: true, queue: true }, CFG.ml || {});
+// Óptica: aumento en la cámara = adaptador × objetivo × zoom. K = µm/px × aumento (constante de la cámara,
+// se obtiene UNA vez con un micrómetro y sirve para cualquier zoom). refW = ancho de imagen de esa calibración.
+CFG.optics = Object.assign({ on: false, adapter: 0.45, objective: 2, eyepiece: 10, zoom: 2, K: 0, refW: 0, verified: false, grid: false, gridUm: 40 }, CFG.optics || {});
 const Cfg = {
   save() { CFG.updatedAt = Date.now(); Store.set('cfg', CFG); },
   profile() { return CFG.profiles.find((p) => p.id === CFG.activeProfile) || CFG.profiles[0]; },
   rules() { return CFG.rules || PV.RULES; },
   // µm por píxel de la imagen de TRABAJO (que puede estar reducida respecto del original)
+  mag() { const o = CFG.optics; return Math.max(0.01, (+o.adapter || 1) * (+o.objective || 1) * (+o.zoom || 1)); },
+  opticsActive() { return !!(CFG.optics.on && CFG.optics.K > 0 && CFG.optics.refW > 0); },
   umPerPx(img) {
     if (img && img.umOverride) return img.umOverride * img.origW / img.workW;
+    if (Cfg.opticsActive()) { const o = CFG.optics, refW = o.refW; return (o.K / Cfg.mag()) * refW / (img ? img.workW : refW); }
     const p = Cfg.profile(), refW = p.refWidth || (img ? img.origW : 1);
     return p.umPerPx * refW / (img ? img.workW : refW);
   },
-  prelim(img) { return !(img && img.umOverride) && !Cfg.profile().verified; },
+  prelim(img) { return !(img && img.umOverride) && (Cfg.opticsActive() ? !CFG.optics.verified : !Cfg.profile().verified); },
 };
 // opciones del clasificador (reglas vigentes + aprendizaje si está validado)
 const classifierOpts = () => ({ rules: CFG.rules, model: Learn.activeModel(), mode: Learn.effectiveMode() });
@@ -2029,7 +2057,9 @@ const Calib = (() => {
     if (!ctx || !(um > 0) || !(ctx.px > 2)) { U.toast('Escriba una distancia válida', 'err'); return; }
     if (ctx.px < 40) U.toast(`Solo ${U.fmt(ctx.px, 0)} px marcados: 1 px de error al tocar ≈ ${U.fmt(100 / ctx.px, 1)} %. Si puede, use una distancia más larga.`, 'info', 8000);
     const p = { id: 'p' + Date.now(), name: $('#calName').value.trim() || 'Perfil', umPerPx: um / ctx.px, refWidth: Math.round(ctx.refW), verified: $('#calVerified').checked, date: new Date().toISOString() };
-    CFG.profiles.push(p); CFG.activeProfile = p.id; Cfg.save();
+    CFG.profiles.push(p); CFG.activeProfile = p.id;
+    if (CFG.optics.on) Object.assign(CFG.optics, { K: p.umPerPx * Cfg.mag(), refW: p.refWidth, verified: p.verified });
+    Cfg.save();
     U.modal('mdlCalib', false);
     U.toast(`Escala guardada: ${p.umPerPx.toFixed(4)} µm/px (${U.esc(p.name)})`, 'ok');
     const done = ctx.onDone; ctx = null;
@@ -2037,6 +2067,57 @@ const Calib = (() => {
     if (done) done(p);
   }
   return { open, save };
+})();
+
+/* ---------------- Óptica del estereoscopio y cuadrícula ---------------- */
+const Optics = (() => {
+  const near = (v) => { // preset más cercano de MotiConnect (para mostrar el error de redondear)
+    const P = [10, 20, 30, 40, 50, 60, 80, 100]; return P.reduce((a, b) => (Math.abs(b - v) < Math.abs(a - v) ? b : a));
+  };
+  function text() {
+    const o = CFG.optics, m = Cfg.mag(), vis = m * (+o.eyepiece || 10), pre = near(vis), err = (pre / vis - 1) * 100;
+    return { m, vis, pre, err };
+  }
+  function render() {
+    const o = CFG.optics, t = text();
+    $$('.optbar').forEach((b) => {
+      b.querySelector('.optZoom').value = o.zoom; b.querySelector('.optGrid').checked = !!o.grid; b.querySelector('.optGridUm').value = o.gridUm;
+      b.querySelector('.optZoom').disabled = !o.on;
+      b.querySelector('.optMag').textContent = o.on ? `cámara ${U.fmt(t.m, 2)}× · ${Cfg.opticsActive() ? U.fmt(Cfg.umPerPx() , 3) + ' µm/px' : 'calibre una vez'}` : '';
+    });
+    const info = $('#oInfo');
+    if (info) info.innerHTML = o.on
+      ? `Aumento en la cámara: <b>${U.fmt(o.adapter, 2)} × ${U.fmt(o.objective, 2)} × ${U.fmt(o.zoom, 2)} = ${U.fmt(t.m, 2)}×</b> (visual con ocular ${U.fmt(o.eyepiece)}×: ${U.fmt(t.vis, 1)}×). `
+        + (Math.abs(t.err) >= 1 ? `Elegir «x${t.pre}» en MotiConnect mediría ${U.fmt(Math.abs(t.err), 0)} % más ${t.err > 0 ? '<b>chico</b> (riesgo: una partícula de 44 µm se leería ≈ ' + U.fmt(44 / (1 + t.err / 100), 0) + ' µm)' : 'grande'}. ` : '')
+        + (Cfg.opticsActive() ? `Constante calibrada: ${U.fmt(o.K, 3)} µm·×/px a ${o.refW} px de ancho${o.verified ? ' (con patrón)' : ' (sin patrón trazable)'}.` : '<b>Falta calibrar una vez</b>: en cualquier zoom, «Calibrar» sobre un micrómetro de platina. Después la escala se ajusta sola al cambiar el zoom.')
+      : 'Desactivado: la escala sale del perfil de calibración elegido (un perfil por cada posición de zoom).';
+  }
+  function set(patch) {
+    Object.assign(CFG.optics, patch); Cfg.save(); render();
+    if ('zoom' in patch || 'on' in patch || 'adapter' in patch || 'objective' in patch) App.onScaleChanged(); else { An.redraw && An.redraw(); }
+  }
+  function bind() {
+    $$('.optbar').forEach((b) => {
+      b.querySelector('.optZoom').addEventListener('change', (e) => { const v = Number(e.target.value); if (v > 0) set({ zoom: +v.toFixed(3) }); });
+      b.querySelector('.optGrid').addEventListener('change', (e) => set({ grid: e.target.checked }));
+      b.querySelector('.optGridUm').addEventListener('change', (e) => { const v = Number(e.target.value); if (v >= 5) set({ gridUm: v }); });
+    });
+    $('#oOn').addEventListener('change', (e) => set({ on: e.target.checked }));
+    [['#oAdapter', 'adapter'], ['#oObjective', 'objective'], ['#oEyepiece', 'eyepiece']].forEach(([id, k]) => $(id).addEventListener('change', (e) => { const v = Number(e.target.value); if (v > 0) set({ [k]: v }); }));
+    $('#oForget').onclick = () => set({ K: 0, refW: 0, verified: false });
+    render();
+  }
+  function fillSettings() { const o = CFG.optics; $('#oOn').checked = !!o.on; $('#oAdapter').value = o.adapter; $('#oObjective').value = o.objective; $('#oEyepiece').value = o.eyepiece; render(); }
+  // cuadrícula: celda en µm → píxeles con la escala activa (ctx en coordenadas de la imagen)
+  function drawGrid(ctx, x0, y0, w, h, umPerPx, lw) {
+    const o = CFG.optics; if (!o.grid || !(umPerPx > 0)) return;
+    const cell = o.gridUm / umPerPx; if (!(cell >= 4)) return;
+    ctx.save(); ctx.strokeStyle = 'rgba(62,224,255,.55)'; ctx.lineWidth = lw; ctx.beginPath();
+    for (let x = x0; x <= x0 + w + 0.5; x += cell) { ctx.moveTo(x, y0); ctx.lineTo(x, y0 + h); }
+    for (let y = y0; y <= y0 + h + 0.5; y += cell) { ctx.moveTo(x0, y); ctx.lineTo(x0 + w, y); }
+    ctx.stroke(); ctx.restore();
+  }
+  return { bind, render, fillSettings, drawGrid };
 })();
 
 /* ---------------- ZIP (sin compresión) para el paquete de tablet ---------------- */
@@ -2263,6 +2344,7 @@ const An = (() => {
   function paint(ctxO, z, live) {
     const { workW: W, workH: H } = S.img;
     if (live && $('#tMask').checked && S.maskImg) ctxO.drawImage(S.maskImg, 0, 0);
+    Optics.drawGrid(ctxO, 0, 0, W, H, Cfg.umPerPx(S.img), 1 / z);
     const lw = 2 / z, fs = 12.5 / z, pad = 4 / z;
     ctxO.font = `700 ${fs}px Bahnschrift, "Arial Narrow", system-ui, sans-serif`; ctxO.textBaseline = 'alphabetic';
     const list = S.parts.filter(visible).sort((a, b) => b.areaPx - a.areaPx), labels = [];
@@ -2573,7 +2655,7 @@ const An = (() => {
     $('#btnDlCsv').onclick = () => U.download(`parche_${U.stamp()}_particulas.csv`, new Blob([U.csv(csvRows())], { type: 'text/csv' }));
     let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (S.img) { layoutStage(); fit(); } }, 120); });
   }
-  return { load, analyze, bind, reset, updateScale, evaluate, renderSide, select, get state() { return S; } };
+  return { load, analyze, bind, reset, updateScale, evaluate, renderSide, select, redraw: () => { if (S.img) draw(); }, get state() { return S; } };
 })();
 
 /* =====================================================================
@@ -3072,6 +3154,7 @@ const Live = (() => {
   }
   function drawBoxes() {
     const lim = CFG.crit.abrMaxUm, W = cv.width, H = cv.height, fs = Math.max(11, Math.round(W / 80));
+    if (geom) Optics.drawGrid(ctx, geom.ox, geom.oy, geom.vw * geom.k, geom.vh * geom.k, umScreen(), 1);
     ctx.font = `700 ${fs}px Bahnschrift, "Arial Narrow", system-ui`; ctx.textBaseline = 'alphabetic';
     for (const t of tracker.tracks) {
       if (t.hits < 2) continue;
@@ -3687,10 +3770,10 @@ const App = (() => {
   }
   function openSettings() {
     renderProfiles();
-    $('#sMinUm').value = CFG.minDetectUm; $('#sSite').value = CFG.site || ''; $('#sSyncUrl').value = (CFG.sync || {}).url || ''; $('#sSyncKey').value = (CFG.sync || {}).key || ''; $('#sMaxPx').value = String(CFG.maxPx); $('#sRed').checked = CFG.removeRed;
+    Optics.fillSettings(); $('#sMinUm').value = CFG.minDetectUm; $('#sSite').value = CFG.site || ''; $('#sSyncUrl').value = (CFG.sync || {}).url || ''; $('#sSyncKey').value = (CFG.sync || {}).key || ''; $('#sMaxPx').value = String(CFG.maxPx); $('#sRed').checked = CFG.removeRed;
     U.modal('mdlSettings');
   }
-  function onScaleChanged() { renderProfiles(); An.updateScale(); if (An.state.img) An.analyze(); Live.onScale(); }
+  function onScaleChanged() { renderProfiles(); An.updateScale(); if (An.state.img) An.analyze(); Live.onScale(); Optics.render(); }
 
   /* ---------------- sin internet ---------------- */
   function capRow(ok, name, txt) { return `<tr><td>${ok ? '<span class="chip ok">Sí</span>' : '<span class="chip abr">No</span>'}</td><td><b>${name}</b><br><span class="hint">${txt}</span></td></tr>`; }
@@ -3735,7 +3818,7 @@ const App = (() => {
   async function boot() {
     document.documentElement.dataset.theme = CFG.theme || 'dark';
     $('#verTxt').textContent = 'Versión ' + APP_VERSION + '.';
-    An.bind(); Live.bind(); Crit.bind(); Learn.bind();
+    An.bind(); Live.bind(); Crit.bind(); Learn.bind(); Optics.bind();
     $$('.nav button').forEach((b) => b.addEventListener('click', () => go(b.dataset.view)));
     $$('[data-close]').forEach((b) => b.addEventListener('click', () => b.closest('.modal').classList.remove('on')));
     $$('.modal').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m && Date.now() - Number(m.dataset.openedAt || 0) > 450) m.classList.remove('on'); }));
