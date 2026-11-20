@@ -26,7 +26,7 @@ platina la app conoce la constante de la cámara y la escala se recalcula sola p
    objetivo (2) y ocular (10).
 2. Ponga cualquier zoom, escríbalo en el control **Zoom** y pulse **Calibrar** sobre el micrómetro (por ejemplo
    1 000 µm). Listo para todos los zooms.
-3. Al cambiar la perilla, escriba el **valor exacto** en «Zoom» (en Analizar o En vivo). La **cuadrícula** (40 µm
+3. Al cambiar la perilla, elija su posición en el desplegable **Perilla** (1 a 5, o «Otro valor…»): la app muestra sola el aumento (x9, x18, x27, x36, x45…). La **cuadrícula** (40 µm
    por defecto, configurable) se agranda o achica sola.
 - **No redondear al preset de MotiConnect**: 1,8× (18× visual) tomado como «x20» mide 11 % más chico; una
   partícula real de 44 µm se leería ≈ 40 µm y pasaría. La app muestra ese error cuando aplica.
