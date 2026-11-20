@@ -18,6 +18,15 @@ La app va completa dentro del APK: no necesita internet ni servidor.
 Reemplace `www/index.html` por la versión nueva (por ejemplo, la app descargada con sus ejemplos de
 aprendizaje desde la pestaña «Aprendizaje») y súbalo: GitHub compila un APK nuevo. Instálelo encima del anterior.
 
+## Actualizar sin desinstalar (desde la versión 2.2.1)
+Hasta la 2.2.0 cada APK salía firmado con una llave distinta y Android respondía «No se instaló la app»;
+había que desinstalar y se perdía lo aprendido. Desde la 2.2.1 todas las versiones usan la llave fija de
+`keystore/` y un número de versión creciente: **se instalan encima y conservan todo**.
+- **Una sola vez** (al pasar a la 2.2.1): en «Aprendizaje» pulse **Exportar ejemplos** y guarde el archivo,
+  desinstale la versión anterior, instale la 2.2.1 y pulse **Importar ejemplos**.
+- Desde ahí: solo instalar encima. **No desinstale nunca**: desinstalar borra lo aprendido en esa tablet.
+- La compilación se detiene sola si un APK no sale con la llave fija, para que nunca llegue uno incompatible.
+
 ## Novedades 2.2 · conexión directa a la Moticam, versión web y sincronización
 - **«En vivo» → «Moticam»**: la app se conecta directo a la cámara del estereoscopio, como MotiConnect, pero con
   la imagen original de la cámara (no la captura de pantalla borrosa).

@@ -28,6 +28,30 @@ if (!x.includes('ScreenCaptureService')) x = x.replace('</application>', '      
 if (!x.includes('usesCleartextTraffic')) x = x.replace('<application', '<application android:usesCleartextTraffic="true"');
 writeFileSync(mf, x);
 
+/* ---------- build.gradle: firma FIJA y número de versión creciente ----------
+   Sin esto, cada compilación salía firmada con una llave nueva y Android rechazaba la
+   actualización («No se instaló la app»): había que desinstalar y se perdía lo aprendido. */
+const gradle = 'android/app/build.gradle';
+let g = readFileSync(gradle, 'utf8');
+const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+const vCode = Number(process.env.GITHUB_RUN_NUMBER || 1) + 100; // siempre mayor que la versión anterior
+g = g.replace(/versionCode\s+\d+/, `versionCode ${vCode}`).replace(/versionName\s+"[^"]*"/, `versionName "${pkg.version}"`);
+if (!g.includes('llaveFija')) {
+  const sign = `
+    signingConfigs {
+        llaveFija {
+            storeFile file("\${rootDir}/../keystore/debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+    }
+`;
+  g = g.replace(/(\n\s*buildTypes\s*\{)/, sign + '$1');
+  g = g.replace(/buildTypes\s*\{/, 'buildTypes {\n        debug {\n            signingConfig signingConfigs.llaveFija\n        }');
+}
+writeFileSync(gradle, g);
+
 /* ---------- MainActivity: registra el complemento ---------- */
 writeFileSync(`${pkgDir}/MainActivity.java`, `package ${appId};
 
